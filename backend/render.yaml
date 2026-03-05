@@ -1,0 +1,27 @@
+# ─────────────────────────────────────────
+# Render.com deployment config
+# ─────────────────────────────────────────
+services:
+  - type: web
+    name: gst-easy-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore  # closest to India
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "https://gst-easy.vercel.app"
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      - key: S3_BUCKET_NAME
+        value: gst-bills
+    healthCheckPath: /api/health
+    autoDeploy: true
