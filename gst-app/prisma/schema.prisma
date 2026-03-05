@@ -1,0 +1,357 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────
+// Users & Auth
+// ─────────────────────────────────────────
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  email         String?  @unique @db.VarChar(255)
+  phone         String   @unique @db.VarChar(15)
+  passwordHash  String   @map("password_hash") @db.VarChar(255)
+  name          String   @db.VarChar(255)
+  role          String   @default("owner") @db.VarChar(20)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  businesses    Business[]
+  auditLogs     AuditLog[]
+  refreshTokens RefreshToken[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+// Business Profile
+// ─────────────────────────────────────────
+
+model Business {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  name          String   @db.VarChar(255)
+  gstin         String   @unique @db.VarChar(15)
+  stateCode     String   @map("state_code") @db.VarChar(2)
+  stateName     String   @map("state_name") @db.VarChar(50)
+  businessType  String   @default("regular") @map("business_type") @db.VarChar(20)
+  address       String?  @db.Text
+  pincode       String?  @db.VarChar(6)
+  phone         String?  @db.VarChar(15)
+  email         String?  @db.VarChar(255)
+  pan           String?  @db.VarChar(10)
+  financialYear String   @map("financial_year") @db.VarChar(7)
+  invoicePrefix String   @default("INV-") @map("invoice_prefix") @db.VarChar(20)
+  nextInvoiceNo Int      @default(1) @map("next_invoice_no")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parties       Party[]
+  invoices      Invoice[]
+  payments      Payment[]
+  gstSummaries  GstMonthlySummary[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
+
+  @@index([userId])
+  @@map("businesses")
+}
+
+// ─────────────────────────────────────────
+// Parties (Customers / Suppliers)
+// ─────────────────────────────────────────
+
+model Party {
+  id          String   @id @default(uuid()) @db.Uuid
+  businessId  String   @map("business_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  gstin       String?  @db.VarChar(15)
+  stateCode   String?  @map("state_code") @db.VarChar(2)
+  stateName   String?  @map("state_name") @db.VarChar(50)
+  partyType   String   @map("party_type") @db.VarChar(10) // 'customer' | 'supplier'
+  address     String?  @db.Text
+  phone       String?  @db.VarChar(15)
+  email       String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoices    Invoice[]
+
+  @@index([businessId])
+  @@index([gstin])
+  @@index([businessId, partyType])
+  @@map("parties")
+}
+
+// ─────────────────────────────────────────
+// Invoices (Sales + Purchases)
+// ─────────────────────────────────────────
+
+model Invoice {
+  id                String   @id @default(uuid()) @db.Uuid
+  businessId        String   @map("business_id") @db.Uuid
+  partyId           String?  @map("party_id") @db.Uuid
+
+  invoiceType       String   @map("invoice_type") @db.VarChar(10) // 'sale' | 'purchase'
+  invoiceNumber     String   @map("invoice_number") @db.VarChar(50)
+  invoiceDate       DateTime @map("invoice_date") @db.Date
+  dueDate           DateTime? @map("due_date") @db.Date
+
+  sellerStateCode   String   @map("seller_state_code") @db.VarChar(2)
+  buyerStateCode    String   @map("buyer_state_code") @db.VarChar(2)
+  isInterState      Boolean  @map("is_inter_state")
+  placeOfSupply     String   @map("place_of_supply") @db.VarChar(2)
+
+  // All amounts in paise (integer)
+  totalTaxableValue BigInt   @default(0) @map("total_taxable_value")
+  totalCgst         BigInt   @default(0) @map("total_cgst")
+  totalSgst         BigInt   @default(0) @map("total_sgst")
+  totalIgst         BigInt   @default(0) @map("total_igst")
+  totalAmount       BigInt   @default(0) @map("total_amount")
+  roundOff          BigInt   @default(0) @map("round_off")
+
+  // Purchase bill specifics
+  originalImageUrl  String?  @map("original_image_url") @db.Text
+  thumbnailUrl      String?  @map("thumbnail_url") @db.Text
+  ocrRawText        String?  @map("ocr_raw_text") @db.Text
+  ocrConfidence     Float?   @map("ocr_confidence")
+
+  // Status
+  paymentStatus     String   @default("unpaid") @map("payment_status") @db.VarChar(15)
+  confidenceScore   String   @default("green") @map("confidence_score") @db.VarChar(10)
+  itcStatus         String   @default("not_applicable") @map("itc_status") @db.VarChar(20)
+  isLocked          Boolean  @default(false) @map("is_locked")
+  isConfirmed       Boolean  @default(true) @map("is_confirmed")
+  filingPeriod      String?  @map("filing_period") @db.VarChar(7)
+
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+  createdBy         String?  @map("created_by") @db.Uuid
+
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  party             Party?   @relation(fields: [partyId], references: [id])
+  items             InvoiceItem[]
+  payments          Payment[]
+
+  @@unique([businessId, invoiceType, invoiceNumber, filingPeriod])
+  @@index([businessId, invoiceType])
+  @@index([businessId, invoiceDate])
+  @@index([businessId, filingPeriod])
+  @@index([businessId, paymentStatus])
+  @@index([partyId])
+  @@index([businessId, confidenceScore])
+  @@map("invoices")
+}
+
+// ─────────────────────────────────────────
+// Invoice Line Items
+// ─────────────────────────────────────────
+
+model InvoiceItem {
+  id            String   @id @default(uuid()) @db.Uuid
+  invoiceId     String   @map("invoice_id") @db.Uuid
+
+  description   String   @db.VarChar(500)
+  hsnCode       String?  @map("hsn_code") @db.VarChar(8)
+  quantity      Float    @default(1)
+  unit          String   @default("NOS") @db.VarChar(20)
+  unitPrice     BigInt   @map("unit_price") // in paise
+  discount      BigInt   @default(0) // in paise
+
+  taxableValue  BigInt   @map("taxable_value") // in paise
+  gstRate       Float    @map("gst_rate")
+  cgstRate      Float    @default(0) @map("cgst_rate")
+  sgstRate      Float    @default(0) @map("sgst_rate")
+  igstRate      Float    @default(0) @map("igst_rate")
+  cgstAmount    BigInt   @default(0) @map("cgst_amount") // in paise
+  sgstAmount    BigInt   @default(0) @map("sgst_amount")
+  igstAmount    BigInt   @default(0) @map("igst_amount")
+
+  totalAmount   BigInt   @map("total_amount") // in paise
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([hsnCode])
+  @@map("invoice_items")
+}
+
+// ─────────────────────────────────────────
+// Payments
+// ─────────────────────────────────────────
+
+model Payment {
+  id              String   @id @default(uuid()) @db.Uuid
+  invoiceId       String   @map("invoice_id") @db.Uuid
+  businessId      String   @map("business_id") @db.Uuid
+
+  amount          BigInt   // in paise
+  paymentDate     DateTime @map("payment_date") @db.Date
+  paymentMode     String   @map("payment_mode") @db.VarChar(20)
+  referenceNumber String?  @map("reference_number") @db.VarChar(100)
+  notes           String?  @db.Text
+
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  createdBy       String?  @map("created_by") @db.Uuid
+
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  business        Business @relation(fields: [businessId], references: [id])
+
+  @@index([invoiceId])
+  @@index([businessId, paymentDate])
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────
+// GST Monthly Summary (Cache)
+// ─────────────────────────────────────────
+
+model GstMonthlySummary {
+  id                    String   @id @default(uuid()) @db.Uuid
+  businessId            String   @map("business_id") @db.Uuid
+  period                String   @db.VarChar(7) // 'YYYY-MM'
+
+  // Output GST
+  outputCgst            BigInt   @default(0) @map("output_cgst")
+  outputSgst            BigInt   @default(0) @map("output_sgst")
+  outputIgst            BigInt   @default(0) @map("output_igst")
+  outputTotal           BigInt   @default(0) @map("output_total")
+  salesCount            Int      @default(0) @map("sales_count")
+  totalTaxableSales     BigInt   @default(0) @map("total_taxable_sales")
+
+  // ITC
+  itcCgst               BigInt   @default(0) @map("itc_cgst")
+  itcSgst               BigInt   @default(0) @map("itc_sgst")
+  itcIgst               BigInt   @default(0) @map("itc_igst")
+  itcTotal              BigInt   @default(0) @map("itc_total")
+  itcEligible           BigInt   @default(0) @map("itc_eligible")
+  itcNeedsReview        BigInt   @default(0) @map("itc_needs_review")
+  itcBlocked            BigInt   @default(0) @map("itc_blocked")
+  purchasesCount        Int      @default(0) @map("purchases_count")
+  totalTaxablePurchases BigInt   @default(0) @map("total_taxable_purchases")
+
+  // Net Payable
+  netCgst               BigInt   @default(0) @map("net_cgst")
+  netSgst               BigInt   @default(0) @map("net_sgst")
+  netIgst               BigInt   @default(0) @map("net_igst")
+  netTotal              BigInt   @default(0) @map("net_total")
+  itcCarryforward       BigInt   @default(0) @map("itc_carryforward")
+
+  // Return status
+  returnStatus          String   @default("draft") @map("return_status") @db.VarChar(20)
+  gstr1DueDate          DateTime? @map("gstr1_due_date") @db.Date
+  gstr3bDueDate         DateTime? @map("gstr3b_due_date") @db.Date
+  lockedAt              DateTime? @map("locked_at") @db.Timestamptz()
+  lockedBy              String?   @map("locked_by") @db.Uuid
+
+  // Cache management
+  lastComputedAt        DateTime @default(now()) @map("last_computed_at") @db.Timestamptz()
+  isStale               Boolean  @default(false) @map("is_stale")
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  business              Business @relation(fields: [businessId], references: [id])
+
+  @@unique([businessId, period])
+  @@index([businessId])
+  @@index([returnStatus])
+  @@map("gst_monthly_summary")
+}
+
+// ─────────────────────────────────────────
+// Audit Log (Append-Only)
+// ─────────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  businessId  String   @map("business_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+
+  entityType  String   @map("entity_type") @db.VarChar(30)
+  entityId    String   @map("entity_id") @db.Uuid
+  action      String   @db.VarChar(20) // create, update, delete, confirm, lock, payment
+  changes     Json     @default("{}")
+  reason      String?  @db.Text
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  business    Business @relation(fields: [businessId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([businessId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("audit_log")
+}
+
+// ─────────────────────────────────────────
+// Notifications
+// ─────────────────────────────────────────
+
+model Notification {
+  id          String   @id @default(uuid()) @db.Uuid
+  businessId  String   @map("business_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+
+  type        String   @db.VarChar(30)
+  title       String   @db.VarChar(255)
+  message     String   @db.Text
+  priority    String   @default("normal") @db.VarChar(10)
+  isRead      Boolean  @default(false) @map("is_read")
+  readAt      DateTime? @map("read_at") @db.Timestamptz()
+  refType     String?  @map("ref_type") @db.VarChar(30)
+  refId       String?  @map("ref_id") @db.Uuid
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  business    Business @relation(fields: [businessId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@index([businessId, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────
+// Refresh Tokens
+// ─────────────────────────────────────────
+
+model RefreshToken {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  tokenHash   String   @unique @map("token_hash") @db.VarChar(255)
+  deviceInfo  String?  @map("device_info") @db.Text
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz()
+  isRevoked   Boolean  @default(false) @map("is_revoked")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+// ─────────────────────────────────────────
+// Indian States Reference
+// ─────────────────────────────────────────
+
+model IndianState {
+  code String  @id @db.VarChar(2)
+  name String  @db.VarChar(50)
+  ut   Boolean @default(false)
+
+  @@map("indian_states")
+}
