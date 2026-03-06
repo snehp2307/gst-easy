@@ -9,9 +9,11 @@ from app.config import settings
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,
-    pool_size=20,
-    max_overflow=10,
-    pool_pre_ping=True,
+    pool_size=3,          # Free tier: keep connections low
+    max_overflow=2,       # Max 5 total connections (Supabase free limit)
+    pool_pre_ping=True,   # Check connection health before use
+    pool_recycle=300,     # Recycle connections every 5 minutes
+    pool_timeout=10,      # Fail fast if no connection available
 )
 
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

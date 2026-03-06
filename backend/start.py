@@ -26,7 +26,7 @@ def main():
     print(f"🚀 Starting server on port {port}...")
     os.execvp(
         "uvicorn",
-        ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", port, "--workers", "2"],
+        ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", port, "--workers", "1"],
     )
 
 
