@@ -26,6 +26,7 @@ class Settings(BaseSettings):
 
     # OCR
     TESSERACT_CMD: str = "tesseract"
+    GOOGLE_VISION_API_KEY: str = ""  # Get from console.cloud.google.com
 
     class Config:
         env_file = ".env"

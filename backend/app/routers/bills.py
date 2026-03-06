@@ -53,7 +53,7 @@ async def upload_bill(
         compressed = content  # PDF: store as-is for now
 
     # Run OCR
-    raw_text = extract_text_from_image(content)
+    raw_text = await extract_text_from_image(content)
     fields, confidence = extract_bill_fields(raw_text)
     score = compute_ocr_confidence_score(confidence)
 
