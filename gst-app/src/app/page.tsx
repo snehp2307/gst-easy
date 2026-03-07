@@ -2,155 +2,243 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getGstSummary, listInvoices, getCurrentUser, formatPaiseClient } from '@/lib/api-helpers';
-import type { GstSummary, Invoice } from '@/lib/api';
+import { formatPaiseClient } from '@/lib/api-helpers';
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+
+function getToken() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('gst_token');
+}
+
+async function apiFetch(path: string) {
+  const token = getToken();
+  const res = await fetch(`${API}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error(res.statusText);
+  return res.json();
+}
+
+interface DashSummary {
+  total_revenue: number;
+  total_expenses: number;
+  gst_payable: number;
+  outstanding_payments: number;
+}
+
+interface MonthlyRevenue {
+  month: string;
+  revenue: number;
+}
+
+interface RecentInvoice {
+  id: string;
+  invoice_number: string;
+  customer_name: string | null;
+  invoice_date: string;
+  total_amount: number;
+  status: string;
+}
 
 export default function DashboardPage() {
-  const [summary, setSummary] = useState<GstSummary | null>(null);
-  const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
+  const [summary, setSummary] = useState<DashSummary | null>(null);
+  const [chart, setChart] = useState<MonthlyRevenue[]>([]);
+  const [recent, setRecent] = useState<RecentInvoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const user = getCurrentUser();
-  const currentPeriod = new Date().toISOString().slice(0, 7);
 
   useEffect(() => {
-    async function loadDashboard() {
-      try {
-        const [gst, invoices] = await Promise.all([
-          getGstSummary(currentPeriod).catch(() => null),
-          listInvoices({ page_size: 5 }).catch(() => ({ invoices: [], total: 0, page: 1, page_size: 5 })),
-        ]);
-        setSummary(gst);
-        setRecentInvoices(invoices.invoices);
-      } catch {
-        // Fallback to demo data if backend unavailable
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadDashboard();
-  }, [currentPeriod]);
+    Promise.all([
+      apiFetch('/analytics/summary').catch(() => null),
+      apiFetch('/analytics/charts').catch(() => ({ monthly_revenue: [] })),
+      apiFetch('/analytics/recent-invoices?limit=5').catch(() => []),
+    ]).then(([sum, charts, inv]) => {
+      setSummary(sum);
+      setChart(charts?.monthly_revenue || []);
+      setRecent(inv || []);
+    }).finally(() => setLoading(false));
+  }, []);
 
   const fmt = formatPaiseClient;
-  const monthName = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-
-  // Derive values from API or use defaults
-  const salesTotal = summary?.total_taxable_sales ?? 0;
-  const purchasesTotal = summary?.total_taxable_purchases ?? 0;
-  const outputGst = summary?.output_gst.total ?? 0;
-  const itcTotal = summary?.itc.total ?? 0;
-  const netPayable = summary?.net_payable.total ?? 0;
-  const salesCount = summary?.sales_count ?? 0;
-  const purchasesCount = summary?.purchases_count ?? 0;
+  const maxRev = Math.max(...chart.map(c => c.revenue), 1);
 
   return (
     <div className="animate-fadeIn">
-      {/* Welcome */}
-      <div style={{ padding: '16px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '2px' }}>
-          Welcome{user ? `, ${user.name}` : ''} 👋
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          {monthName}
+      {/* Page Title */}
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Financial Overview</h2>
+        <p style={{ color: '#64748b', marginTop: '4px' }}>
+          Dashboard status for {new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
         </p>
       </div>
 
-      {/* Deadline Banner */}
-      <div className="deadline-banner" style={{ margin: '0 16px 16px' }}>
-        ⚠️ GSTR-1 due in 6 days (11 {new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })})
-      </div>
-
-      {/* Metrics Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '0 16px', marginBottom: '12px' }}>
-        <div className="card metric-card">
-          <div className="metric-label">🧾 SALES</div>
-          <div className="metric-value" style={{ color: 'var(--primary)' }}>₹{fmt(salesTotal)}</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{salesCount} invoices</div>
-        </div>
-        <div className="card metric-card">
-          <div className="metric-label">🧾 PURCHASES</div>
-          <div className="metric-value" style={{ color: 'var(--secondary)' }}>₹{fmt(purchasesTotal)}</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{purchasesCount} bills</div>
-        </div>
-        <div className="card metric-card">
-          <div className="metric-label">🔴 OUTPUT GST</div>
-          <div className="metric-value" style={{ color: 'var(--red)' }}>₹{fmt(outputGst)}</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>CGST + SGST + IGST</div>
-        </div>
-        <div className="card metric-card">
-          <div className="metric-label">🟢 ITC (CREDIT)</div>
-          <div className="metric-value" style={{ color: 'var(--green)' }}>₹{fmt(itcTotal)}</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            {itcTotal > 0 && '✅ Eligible'}
-          </div>
-        </div>
-      </div>
-
-      {/* Net GST */}
-      <div className="card gst-net-card" style={{ margin: '0 16px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div className="metric-label">🔥 NET GST TO PAY</div>
-            <div style={{ fontSize: '28px', fontWeight: '800', color: netPayable > 0 ? 'var(--primary)' : 'var(--green)' }}>
-              ₹{fmt(Math.max(0, netPayable))}
+      {/* Stats Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '32px' }}>
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div className="stat-icon green">
+              <span className="material-symbols-outlined">trending_up</span>
             </div>
-            <Link href="/gst-summary" style={{ fontSize: '13px', color: 'var(--primary)', textDecoration: 'none' }}>
-              View full GST summary →
-            </Link>
+            <span className="stat-badge up">+12.5%</span>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <span className="badge badge-yellow">📝 Draft</span>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Due: 20 {new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+          <p className="stat-label">Total Revenue</p>
+          <p className="stat-value">₹{fmt(summary?.total_revenue ?? 0)}</p>
+        </div>
+
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div className="stat-icon slate">
+              <span className="material-symbols-outlined">shopping_cart</span>
             </div>
+            <span className="stat-badge down">-4.2%</span>
           </div>
+          <p className="stat-label">Total Expenses</p>
+          <p className="stat-value">₹{fmt(summary?.total_expenses ?? 0)}</p>
+        </div>
+
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div className="stat-icon green">
+              <span className="material-symbols-outlined">account_balance</span>
+            </div>
+            <span className="stat-badge up">+2.1%</span>
+          </div>
+          <p className="stat-label">GST Payable</p>
+          <p className="stat-value">₹{fmt(summary?.gst_payable ?? 0)}</p>
+        </div>
+
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div className="stat-icon orange">
+              <span className="material-symbols-outlined">pending_actions</span>
+            </div>
+            <span className="stat-badge down">-8.4%</span>
+          </div>
+          <p className="stat-label">Outstanding Payments</p>
+          <p className="stat-value">₹{fmt(summary?.outstanding_payments ?? 0)}</p>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '0 16px', marginBottom: '16px' }}>
-        <Link href="/invoices/new" className="btn btn-primary btn-lg" style={{ justifyContent: 'center', textDecoration: 'none' }}>
-          + Create Invoice
-        </Link>
-        <Link href="/bills" className="btn btn-ghost btn-lg" style={{ justifyContent: 'center', textDecoration: 'none' }}>
-          📷 Upload Bill
-        </Link>
-      </div>
-
-      {/* Recent Activity */}
-      {recentInvoices.length > 0 && (
-        <div style={{ padding: '0 16px', paddingBottom: '100px' }}>
-          <h2 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>
-            RECENT ACTIVITY
-          </h2>
-          <div className="card" style={{ padding: 0 }}>
-            {recentInvoices.map(inv => (
-              <div key={inv.id} className="invoice-card">
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className={`confidence-dot confidence-${inv.confidence_score}`} />
-                    <span className="invoice-party">{inv.party_name || inv.invoice_number}</span>
-                  </div>
-                  <div className="invoice-meta">
-                    {inv.invoice_number} • {new Date(inv.invoice_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                  </div>
-                </div>
-                <div>
-                  <div className="invoice-amount">₹{fmt(inv.total_amount)}</div>
-                  <span className={`badge badge-${inv.payment_status === 'paid' ? 'green' : inv.payment_status === 'partial' ? 'yellow' : 'red'}`}>
-                    {inv.payment_status}
-                  </span>
-                </div>
+      {/* Chart + Filing Status */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px', marginBottom: '32px' }}>
+        {/* Bar Chart */}
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Monthly Revenue Overview</h3>
+              <p style={{ fontSize: '14px', color: '#64748b' }}>Comparison of last 6 months</p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button style={{ padding: '6px 12px', fontSize: '12px', fontWeight: 500, background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                Last 6 Months
+              </button>
+            </div>
+          </div>
+          <div className="bar-chart">
+            {chart.map((item, i) => (
+              <div key={i} className="bar-col">
+                <div className="bar-tooltip">₹{fmt(item.revenue)}</div>
+                <div className="bar-fill" style={{ height: `${Math.max(4, (item.revenue / maxRev) * 100)}%` }} />
+                <p className="bar-label">{item.month}</p>
               </div>
             ))}
+            {chart.length === 0 && (
+              <p style={{ color: '#94a3b8', textAlign: 'center', width: '100%', padding: '60px 0' }}>
+                No revenue data yet
+              </p>
+            )}
           </div>
         </div>
-      )}
 
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-          Loading...
+        {/* Tax Filing Status */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px' }}>Tax Filing Status</h3>
+            <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px' }}>Upcoming Deadlines</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div className="filing-circle progress">
+                  <span>75%</span>
+                </div>
+                <div>
+                  <p style={{ fontSize: '14px', fontWeight: 600 }}>GSTR-1</p>
+                  <p style={{ fontSize: '12px', color: '#94a3b8' }}>Due in 5 days</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div className="filing-circle">
+                  <span style={{ color: '#94a3b8' }}>0%</span>
+                </div>
+                <div>
+                  <p style={{ fontSize: '14px', fontWeight: 600 }}>GSTR-3B</p>
+                  <p style={{ fontSize: '12px', color: '#94a3b8' }}>Due in 15 days</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button className="btn-primary" style={{ width: '100%', marginTop: '32px', justifyContent: 'center' }}>
+            File Taxes Now
+          </button>
         </div>
-      )}
+      </div>
+
+      {/* Recent Invoices Table */}
+      <div className="card" style={{ padding: 0 }}>
+        <div style={{ padding: '24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Recent Invoices</h3>
+          <Link href="/invoices" style={{ fontSize: '14px', fontWeight: 600, color: '#10a24b', textDecoration: 'none' }}>
+            View All
+          </Link>
+        </div>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Invoice ID</th>
+              <th>Customer</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recent.map(inv => (
+              <tr key={inv.id}>
+                <td style={{ fontWeight: 500 }}>{inv.invoice_number}</td>
+                <td>{inv.customer_name || '—'}</td>
+                <td style={{ color: '#64748b' }}>
+                  {new Date(inv.invoice_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </td>
+                <td style={{ fontWeight: 700 }}>₹{fmt(inv.total_amount)}</td>
+                <td>
+                  <span className={`badge ${inv.status === 'paid' ? 'badge-green' : inv.status === 'overdue' ? 'badge-red' : 'badge-orange'}`}>
+                    {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                  </span>
+                </td>
+                <td>
+                  <button style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    <span className="material-symbols-outlined">more_horiz</span>
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {recent.length === 0 && (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', color: '#94a3b8', padding: '40px' }}>
+                  {loading ? 'Loading...' : 'No invoices yet. Create your first invoice!'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer */}
+      <footer style={{ marginTop: '48px', paddingTop: '24px', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
+        <p style={{ fontSize: '12px', color: '#94a3b8' }}>
+          © 2024 GSTFlow Automation Platform. All financial data is encrypted and secure.
+        </p>
+      </footer>
     </div>
   );
 }

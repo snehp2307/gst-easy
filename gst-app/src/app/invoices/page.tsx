@@ -2,143 +2,157 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { listInvoices, formatPaiseClient } from '@/lib/api-helpers';
-import type { Invoice, InvoiceListResponse } from '@/lib/api';
+import { formatPaiseClient } from '@/lib/api-helpers';
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+
+function getToken() {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('gst_token');
+}
+
+async function apiFetch(path: string) {
+    const token = getToken();
+    const res = await fetch(`${API}${path}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error(res.statusText);
+    return res.json();
+}
+
+interface Invoice {
+    id: string;
+    invoice_number: string;
+    customer_name: string | null;
+    invoice_date: string;
+    total_amount: number;
+    total_cgst: number;
+    total_sgst: number;
+    total_igst: number;
+    payment_status: string;
+}
 
 export default function InvoicesPage() {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [total, setTotal] = useState(0);
-    const [page, setPage] = useState(1);
     const [filter, setFilter] = useState('all');
-    const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
-    const pageSize = 20;
+    const fmt = formatPaiseClient;
 
     useEffect(() => {
-        setLoading(true);
-        listInvoices({
-            invoice_type: 'sale',
-            payment_status: filter !== 'all' ? filter : undefined,
-            search: search || undefined,
-            page,
-            page_size: pageSize,
-        })
-            .then((data: InvoiceListResponse) => {
-                setInvoices(data.invoices);
-                setTotal(data.total);
-            })
-            .catch(() => {
-                setInvoices([]);
-                setTotal(0);
-            })
+        const params = filter !== 'all' ? `&payment_status=${filter}` : '';
+        apiFetch(`/invoices?invoice_type=sale${params}`)
+            .then(data => { setInvoices(data.invoices || []); setTotal(data.total || 0); })
+            .catch(() => { })
             .finally(() => setLoading(false));
-    }, [page, filter, search]);
+    }, [filter]);
 
-    const fmt = formatPaiseClient;
-    const totalPages = Math.ceil(total / pageSize);
+    const filters = [
+        { label: 'All', value: 'all' },
+        { label: 'Paid', value: 'paid' },
+        { label: 'Pending', value: 'unpaid' },
+        { label: 'Overdue', value: 'overdue' },
+    ];
 
     return (
         <div className="animate-fadeIn">
-            {/* Header */}
-            <div style={{ padding: '16px' }}>
-                <h1 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '12px' }}>Invoices</h1>
-
-                {/* Search */}
-                <div style={{ position: 'relative', marginBottom: '12px' }}>
-                    <input
-                        className="form-input"
-                        placeholder="🔍 Search invoices..."
-                        value={search}
-                        onChange={e => { setSearch(e.target.value); setPage(1); }}
-                        style={{ paddingLeft: '12px' }}
-                    />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                <div>
+                    <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Invoices</h2>
+                    <p style={{ color: '#64748b', marginTop: '4px' }}>{total} total invoices</p>
                 </div>
-
-                {/* Filter Chips */}
-                <div className="filter-chips">
-                    {[
-                        { key: 'all', label: 'All' },
-                        { key: 'paid', label: '✅ Paid' },
-                        { key: 'unpaid', label: '🔴 Unpaid' },
-                        { key: 'partial', label: '🟡 Partial' },
-                    ].map(f => (
-                        <button
-                            key={f.key}
-                            className={`chip ${filter === f.key ? 'active' : ''}`}
-                            onClick={() => { setFilter(f.key); setPage(1); }}
-                        >
-                            {f.label}
-                        </button>
-                    ))}
-                </div>
+                <Link href="/invoices/new" className="btn-primary" style={{ textDecoration: 'none' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
+                    Create Invoice
+                </Link>
             </div>
 
-            {/* Invoice List */}
-            {loading ? (
-                <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>Loading...</div>
-            ) : invoices.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '60px' }}>
-                    <div style={{ fontSize: '48px', marginBottom: '12px' }}>📭</div>
-                    <div style={{ fontWeight: '600', marginBottom: '4px' }}>No invoices yet</div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                        Create your first invoice to get started
-                    </div>
-                </div>
-            ) : (
-                <div className="card" style={{ margin: '0 16px', padding: 0 }}>
-                    {invoices.map(inv => (
-                        <div key={inv.id} className="invoice-card">
-                            <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                                    <span className={`confidence-dot confidence-${inv.confidence_score}`} />
-                                    <span className="invoice-party">{inv.party_name || 'Cash Customer'}</span>
-                                </div>
-                                <div className="invoice-meta">
-                                    {inv.invoice_number} • {new Date(inv.invoice_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                                    {' • '}
-                                    <span style={{ fontSize: '10px', color: inv.is_inter_state ? 'var(--secondary)' : 'var(--text-muted)' }}>
-                                        {inv.is_inter_state ? 'IGST' : 'CGST+SGST'}
+            {/* Filters */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                {filters.map(f => (
+                    <button
+                        key={f.value}
+                        onClick={() => setFilter(f.value)}
+                        style={{
+                            padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+                            border: filter === f.value ? 'none' : '1px solid #e2e8f0',
+                            background: filter === f.value ? '#10a24b' : '#fff',
+                            color: filter === f.value ? '#fff' : '#475569',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        {f.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Table */}
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <table className="data-table">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>GST (18%)</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {invoices.map(inv => (
+                            <tr key={inv.id}>
+                                <td style={{ fontWeight: 500 }}>{inv.invoice_number}</td>
+                                <td>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{
+                                            width: '32px', height: '32px', borderRadius: '50%',
+                                            background: '#f1f5f9', display: 'flex', alignItems: 'center',
+                                            justifyContent: 'center', fontSize: '13px', fontWeight: 600, color: '#64748b',
+                                        }}>
+                                            {(inv.customer_name || '?')[0].toUpperCase()}
+                                        </div>
+                                        {inv.customer_name || '—'}
+                                    </div>
+                                </td>
+                                <td style={{ color: '#64748b' }}>
+                                    {new Date(inv.invoice_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </td>
+                                <td style={{ fontWeight: 700 }}>₹{fmt(inv.total_amount)}</td>
+                                <td style={{ color: '#10a24b', fontWeight: 500 }}>
+                                    ₹{fmt(inv.total_cgst + inv.total_sgst + inv.total_igst)}
+                                </td>
+                                <td>
+                                    <span className={`badge ${inv.payment_status === 'paid' ? 'badge-green' : inv.payment_status === 'overdue' ? 'badge-red' : 'badge-orange'}`}>
+                                        {inv.payment_status.charAt(0).toUpperCase() + inv.payment_status.slice(1)}
                                     </span>
-                                </div>
-                            </div>
-                            <div>
-                                <div className="invoice-amount">₹{fmt(inv.total_amount)}</div>
-                                <span className={`badge badge-${inv.payment_status === 'paid' ? 'green' : inv.payment_status === 'partial' ? 'yellow' : 'red'}`}>
-                                    {inv.payment_status}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '16px' }}>
-                    <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                    >
-                        ← Prev
-                    </button>
-                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                        Page {page} of {totalPages} ({total} total)
-                    </span>
-                    <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                        disabled={page === totalPages}
-                    >
-                        Next →
-                    </button>
-                </div>
-            )}
-
-            {/* FAB */}
-            <Link href="/invoices/new" className="fab" style={{ textDecoration: 'none' }}>+</Link>
-
-            <div style={{ paddingBottom: '100px' }} />
+                                </td>
+                                <td>
+                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                        <button style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>visibility</span>
+                                        </button>
+                                        <button style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>download</span>
+                                        </button>
+                                        <button style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                        {invoices.length === 0 && (
+                            <tr>
+                                <td colSpan={7} style={{ textAlign: 'center', color: '#94a3b8', padding: '48px' }}>
+                                    {loading ? 'Loading...' : 'No invoices found'}
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }

@@ -4,17 +4,18 @@ import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
-  title: "GST Easy — Simple GST for Indian Businesses",
-  description: "Create invoices, scan purchase bills, and track your GST — no CA needed for the routine stuff.",
-  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
+  title: "GSTFlow — GST Automation Platform",
+  description: "Create invoices, track GST, manage customers and vendors — all in one platform for Indian businesses.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <meta name="theme-color" content="#6366f1" />
+        <meta name="theme-color" content="#10a24b" />
         <link rel="icon" href="/favicon.ico" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
       <body>
         <AuthGuard>

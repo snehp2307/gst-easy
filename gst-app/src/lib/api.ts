@@ -3,7 +3,7 @@
  * All frontend pages use this to communicate with the Python backend.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 interface ApiOptions {
     method?: string;
@@ -82,7 +82,7 @@ export async function login(phone: string, password: string): Promise<LoginRespo
 
 export async function setupBusiness(business: {
     name: string;
-    gstin: string;
+    gstin?: string;
     state_code: string;
     state_name: string;
     financial_year: string;

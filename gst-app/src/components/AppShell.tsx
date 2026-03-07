@@ -1,54 +1,114 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import BottomNav from '@/components/BottomNav';
-import AuthGuard from '@/components/AuthGuard';
+import Link from 'next/link';
 import { getCurrentUser, logout } from '@/lib/api';
+
+const NAV_ITEMS = [
+    { icon: 'dashboard', label: 'Dashboard', href: '/' },
+    { icon: 'description', label: 'Invoices', href: '/invoices' },
+    { icon: 'receipt_long', label: 'Bills', href: '/bills' },
+    { icon: 'payments', label: 'Payments', href: '/payments' },
+    { icon: 'gavel', label: 'GST Center', href: '/gst-center' },
+    { icon: 'bar_chart', label: 'Reports', href: '/reports' },
+    { divider: true },
+    { icon: 'group', label: 'Customers', href: '/customers' },
+    { icon: 'store', label: 'Vendors', href: '/vendors' },
+] as const;
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isAuthPage = pathname === '/auth';
     const user = getCurrentUser();
 
-    if (isAuthPage) {
-        return <>{children}</>;
-    }
+    if (isAuthPage) return <>{children}</>;
 
     return (
-        <>
-            <header className="app-header">
-                <span className="app-header-title">GST Easy</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <button className="btn-ghost" style={{ position: 'relative', padding: '6px' }}>
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                        </svg>
-                        <span style={{
-                            position: 'absolute', top: '2px', right: '2px',
-                            width: '8px', height: '8px', borderRadius: '50%',
-                            background: '#ef4444', border: '2px solid white'
-                        }} />
-                    </button>
-                    <button
-                        onClick={() => { logout(); window.location.href = '/auth'; }}
-                        title="Logout"
-                        style={{
-                            width: '32px', height: '32px', borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'white', fontSize: '14px', fontWeight: '700',
-                            border: 'none', cursor: 'pointer',
-                        }}
-                    >
-                        {user?.name?.[0]?.toUpperCase() || 'U'}
-                    </button>
+        <div style={{ display: 'flex', minHeight: '100vh' }}>
+            {/* Sidebar */}
+            <aside className="sidebar">
+                <div className="sidebar-brand">
+                    <div className="sidebar-brand-icon">
+                        <span className="material-symbols-outlined">account_balance_wallet</span>
+                    </div>
+                    <div>
+                        <h1>GSTFlow</h1>
+                        <p>Automation Platform</p>
+                    </div>
                 </div>
-            </header>
-            <main className="page-content">
-                {children}
-            </main>
-            <BottomNav />
-        </>
+
+                <nav className="sidebar-nav">
+                    {NAV_ITEMS.map((item, i) => {
+                        if ('divider' in item) {
+                            return <div key={i} className="sidebar-divider" />;
+                        }
+                        const isActive = item.href === '/'
+                            ? pathname === '/'
+                            : pathname.startsWith(item.href);
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={isActive ? 'active' : ''}
+                            >
+                                <span className="material-symbols-outlined">{item.icon}</span>
+                                <span>{item.label}</span>
+                            </Link>
+                        );
+                    })}
+                </nav>
+
+                <div className="sidebar-footer">
+                    <Link href="/settings" className={pathname === '/settings' ? 'active' : ''} style={{
+                        display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px',
+                        borderRadius: '8px', fontSize: '14px', fontWeight: 500, color: '#475569',
+                        textDecoration: 'none',
+                    }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#94a3b8' }}>settings</span>
+                        <span>Settings</span>
+                    </Link>
+                </div>
+            </aside>
+
+            {/* Main Area */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                {/* Top Header */}
+                <header className="top-header">
+                    <div className="search-box">
+                        <span className="material-symbols-outlined">search</span>
+                        <input type="text" placeholder="Search invoices, customers, or reports..." />
+                    </div>
+                    <div className="header-actions">
+                        <button className="notification-btn">
+                            <span className="material-symbols-outlined">notifications</span>
+                            <span className="notification-dot" />
+                        </button>
+                        <div style={{ height: '32px', width: '1px', background: '#e2e8f0' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ textAlign: 'right' }}>
+                                <p style={{ fontSize: '14px', fontWeight: 600, margin: 0 }}>
+                                    {user?.name || 'User'}
+                                </p>
+                                <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
+                                    Administrator
+                                </p>
+                            </div>
+                            <div
+                                className="user-avatar"
+                                onClick={() => { logout(); window.location.href = '/auth'; }}
+                                title="Logout"
+                            >
+                                {user?.name?.[0]?.toUpperCase() || 'U'}
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                {/* Page Content */}
+                <main className="page-content animate-fadeIn">
+                    {children}
+                </main>
+            </div>
+        </div>
     );
 }
