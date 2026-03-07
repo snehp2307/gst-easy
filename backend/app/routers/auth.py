@@ -4,11 +4,11 @@ Auth API — Register, Login, Business Setup.
 from datetime import datetime, timedelta
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from passlib.hash import bcrypt
-from jose import jwt
+import bcrypt
+from jose import jwt, JWTError
 
 from app.database import get_db
 from app.config import settings
@@ -30,16 +30,27 @@ def create_token(user_id: str, name: str) -> str:
 
 
 async def get_current_user(
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """Dependency: extract and validate JWT from Authorization header.
-    In production, extract from request headers. Simplified here."""
-    # This is a placeholder — in the real app, parse Authorization header
-    # For now, return the first user for demo purposes
-    result = await db.execute(select(User).limit(1))
+    """Extract and validate JWT from Authorization: Bearer <token> header."""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+
+    token = auth_header.removeprefix("Bearer ").strip()
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    result = await db.execute(select(User).where(User.id == UUID(user_id)))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        raise HTTPException(status_code=401, detail="User not found")
     return user
 
 
@@ -53,7 +64,7 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
     user = User(
         phone=req.phone,
-        password_hash=bcrypt.hash(req.password),
+        password_hash=bcrypt.hashpw(req.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
         name=req.name,
         email=req.email,
     )
@@ -70,7 +81,7 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.phone == req.phone))
     user = result.scalar_one_or_none()
 
-    if not user or not bcrypt.verify(req.password, user.password_hash):
+    if not user or not bcrypt.checkpw(req.password.encode('utf-8'), user.password_hash.encode('utf-8')):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_token(str(user.id), user.name)
@@ -84,18 +95,20 @@ async def setup_business(
     user: User = Depends(get_current_user),
 ):
     """Set up business profile after registration."""
-    # Validate GSTIN
-    gstin_results = validate_gstin(req.gstin)
-    failed = [r for r in gstin_results if not r.passed and r.severity == "critical"]
-    if failed:
-        raise HTTPException(status_code=400, detail=failed[0].message)
+    # Validate GSTIN only if provided
+    gstin_value = req.gstin.strip() if req.gstin else None
+    if gstin_value:
+        gstin_results = validate_gstin(gstin_value)
+        failed = [r for r in gstin_results if not r.passed and r.severity == "critical"]
+        if failed:
+            raise HTTPException(status_code=400, detail=failed[0].message)
 
     state_name = get_state_name(req.state_code) or req.state_name
 
     business = Business(
         user_id=user.id,
         name=req.name,
-        gstin=req.gstin,
+        gstin=gstin_value,
         state_code=req.state_code,
         state_name=state_name,
         business_type=req.business_type,

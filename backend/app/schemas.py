@@ -24,7 +24,7 @@ class LoginRequest(BaseModel):
 
 class BusinessSetupRequest(BaseModel):
     name: str
-    gstin: str = Field(..., min_length=15, max_length=15)
+    gstin: Optional[str] = None
     state_code: str = Field(..., min_length=2, max_length=2)
     state_name: str
     business_type: str = "regular"

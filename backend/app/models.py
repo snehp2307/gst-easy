@@ -43,7 +43,7 @@ class Business(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name = Column(String(255), nullable=False)
-    gstin = Column(String(15), unique=True, nullable=False)
+    gstin = Column(String(15), unique=True, nullable=True)
     state_code = Column(String(2), nullable=False)
     state_name = Column(String(50), nullable=False)
     business_type = Column(String(20), default="regular")
