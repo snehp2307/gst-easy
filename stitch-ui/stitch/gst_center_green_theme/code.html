@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GSTFlow - GST Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#10a24b",
+                        "background-light": "#f6f8f7",
+                        "background-dark": "#112117",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar -->
+<aside class="w-64 flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col">
+<div class="p-6 flex items-center gap-3">
+<div class="size-10 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-2xl">account_balance_wallet</span>
+</div>
+<div>
+<h1 class="text-slate-900 dark:text-white font-bold text-lg leading-none">GSTFlow</h1>
+<p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Professional Fintech</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">description</span>
+<span class="text-sm font-medium">Invoices</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">receipt</span>
+<span class="text-sm font-medium">Bills</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">payments</span>
+<span class="text-sm font-medium">Payments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-primary/10 text-primary rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px] font-fill">percent</span>
+<span class="text-sm font-semibold">GST Center</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">bar_chart</span>
+<span class="text-sm font-medium">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">group</span>
+<span class="text-sm font-medium">Customers</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">storefront</span>
+<span class="text-sm font-medium">Vendors</span>
+</a>
+<div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</div>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3 px-2 py-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+<div class="size-8 rounded-full bg-slate-300 overflow-hidden" data-alt="Profile picture of a professional user" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAQ6Ez3io5xDMrJpYbZuTsEOQ_WPvUJmAFEYTP0h00ySkS7aVMSmM5bQKS_a-emp4jUYUmAyhV0K--XaFCGPqHmyTx02t2I06ZsnjYzrzFiwlWUSEr0DdkOOd4mR_u_1BEL4cHwG8vF8FBKdxckO2QCJwc25tIVzc49_i17SzxVM6xD4ICyxjqq33w-1Uy8q-L7AGBuP56z_zlYLGZnT8Fq4f88Yjdtbe9AidtJ3KzZvr15oUdC2q4kAm1b0I--VG90nXSmjmOqS9in')"></div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-bold text-slate-900 dark:text-white truncate">Alex Sharma</p>
+<p class="text-[10px] text-slate-500 truncate">Financial Admin</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-sm">unfold_more</span>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-hidden">
+<!-- Header -->
+<header class="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-bold text-slate-900 dark:text-white">GST Center</h2>
+<div class="h-6 w-px bg-slate-200 dark:border-slate-800"></div>
+<span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Live Compliance</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative max-w-xs">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="w-64 pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/20 placeholder-slate-500" placeholder="Search filings, invoices..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="size-10 flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="size-10 flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
+<!-- Page Intro -->
+<div class="mb-8">
+<h3 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Tax Compliance Dashboard</h3>
+<p class="text-slate-500 dark:text-slate-400 mt-1">Monitor your GST liabilities and input tax credits in real-time for Q4 FY2023-24.</p>
+</div>
+<!-- GST Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">CGST Payable</p>
+<span class="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded-lg text-lg">account_balance</span>
+</div>
+<h4 class="text-3xl font-bold text-slate-900 dark:text-white">₹45,200</h4>
+<div class="flex items-center gap-1 mt-2 text-emerald-600 dark:text-emerald-400">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span class="text-xs font-semibold">+12.5% vs last month</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">SGST Payable</p>
+<span class="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded-lg text-lg">home_work</span>
+</div>
+<h4 class="text-3xl font-bold text-slate-900 dark:text-white">₹45,200</h4>
+<div class="flex items-center gap-1 mt-2 text-emerald-600 dark:text-emerald-400">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span class="text-xs font-semibold">+12.5% vs last month</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">IGST Payable</p>
+<span class="material-symbols-outlined text-blue-500 bg-blue-500/10 p-1.5 rounded-lg text-lg">public</span>
+</div>
+<h4 class="text-3xl font-bold text-slate-900 dark:text-white">₹82,400</h4>
+<div class="flex items-center gap-1 mt-2 text-rose-600 dark:text-rose-400">
+<span class="material-symbols-outlined text-sm">trending_down</span>
+<span class="text-xs font-semibold">-5.2% vs last month</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm ring-2 ring-primary/20">
+<div class="flex items-center justify-between mb-4">
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Input Tax Credit</p>
+<span class="material-symbols-outlined text-amber-500 bg-amber-500/10 p-1.5 rounded-lg text-lg">savings</span>
+</div>
+<h4 class="text-3xl font-bold text-slate-900 dark:text-white">₹1,12,000</h4>
+<div class="flex items-center gap-1 mt-2 text-emerald-600 dark:text-emerald-400">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span class="text-xs font-semibold">+8.4% vs last month</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Tax Breakdown Table -->
+<div class="lg:col-span-2 flex flex-col gap-6">
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+<div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+<h5 class="text-lg font-bold text-slate-900 dark:text-white">Tax Breakdown by Business Unit</h5>
+<button class="text-primary text-sm font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-lg">download</span> Export PDF
+                                </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50 dark:bg-slate-800/50">
+<th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Business Unit</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Turnover</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">CGST (9%)</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">SGST (9%)</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 font-semibold text-slate-900 dark:text-white">Corporate HQ</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹45,00,000</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹4,05,000</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹4,05,000</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 uppercase">Filed</span>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 font-semibold text-slate-900 dark:text-white">Bangalore R&amp;D</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹22,00,000</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹1,98,000</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹1,98,000</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 uppercase">Pending</span>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 font-semibold text-slate-900 dark:text-white">Delhi Operations</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹18,50,000</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹1,66,500</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹1,66,500</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 uppercase">Filed</span>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 font-semibold text-slate-900 dark:text-white">Mumbai Sales</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹31,00,000</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹2,79,000</td>
+<td class="px-6 py-4 text-slate-600 dark:text-slate-400">₹2,79,000</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 uppercase">Overdue</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Column Widgets -->
+<div class="flex flex-col gap-8">
+<!-- GSTIN Validator Tool -->
+<div class="bg-primary p-6 rounded-xl text-white shadow-lg relative overflow-hidden">
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-2xl">verified_user</span>
+<h5 class="text-lg font-bold">GSTIN Validator</h5>
+</div>
+<p class="text-primary/10 text-white/80 text-sm mb-6 leading-relaxed">Quickly verify the authenticity of any GST identification number before processing invoices.</p>
+<div class="space-y-3">
+<input class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/30 text-sm focus:outline-none backdrop-blur-sm" placeholder="Enter GSTIN (e.g. 07AABCM...)" type="text"/>
+<button class="w-full bg-white text-primary font-bold py-3 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
+                                        Validate Now
+                                    </button>
+</div>
+<div class="mt-4 flex items-center justify-center gap-2 text-[10px] uppercase font-bold text-white/60">
+<span class="material-symbols-outlined text-xs">encrypted</span> Secure Verification
+                                </div>
+</div>
+<!-- Abstract background shape -->
+<div class="absolute -right-8 -bottom-8 bg-white/5 size-32 rounded-full"></div>
+<div class="absolute -left-4 top-1/2 bg-white/5 size-16 rounded-full"></div>
+</div>
+<!-- Filing Schedule -->
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+<h5 class="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">event</span> Filing Deadlines
+                            </h5>
+<div class="space-y-4">
+<div class="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+<div class="text-center">
+<p class="text-[10px] font-bold text-slate-400 uppercase">Oct</p>
+<p class="text-lg font-black text-slate-700 dark:text-white leading-none">20</p>
+</div>
+<div class="flex-1">
+<p class="text-xs font-bold text-slate-900 dark:text-white">GSTR-3B Filing</p>
+<p class="text-[10px] text-slate-500">Monthly Summary</p>
+</div>
+<span class="material-symbols-outlined text-amber-500">warning</span>
+</div>
+<div class="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+<div class="text-center">
+<p class="text-[10px] font-bold text-slate-400 uppercase">Oct</p>
+<p class="text-lg font-black text-slate-700 dark:text-white leading-none">11</p>
+</div>
+<div class="flex-1">
+<p class="text-xs font-bold text-slate-900 dark:text-white">GSTR-1 Filing</p>
+<p class="text-[10px] text-slate-500">Outward Supplies</p>
+</div>
+<span class="material-symbols-outlined text-emerald-500">check_circle</span>
+</div>
+<div class="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+<div class="text-center">
+<p class="text-[10px] font-bold text-slate-400 uppercase">Nov</p>
+<p class="text-lg font-black text-slate-700 dark:text-white leading-none">13</p>
+</div>
+<div class="flex-1">
+<p class="text-xs font-bold text-slate-900 dark:text-white">IFF Filing</p>
+<p class="text-[10px] text-slate-500">Quarterly QRMP</p>
+</div>
+<span class="material-symbols-outlined text-slate-300">schedule</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

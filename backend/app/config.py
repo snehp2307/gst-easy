@@ -9,10 +9,11 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/gst_app"
 
-    # Auth
+    # Auth — JWT
     JWT_SECRET: str = "dev-secret-change-in-production"
     JWT_ALGORITHM: str = "HS256"
-    JWT_EXPIRY_HOURS: int = 24
+    JWT_ACCESS_HOURS: int = 24
+    JWT_REFRESH_DAYS: int = 30
 
     # CORS
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
@@ -26,7 +27,17 @@ class Settings(BaseSettings):
 
     # OCR
     TESSERACT_CMD: str = "tesseract"
-    GOOGLE_VISION_API_KEY: str = ""  # Get from console.cloud.google.com
+
+    # Redis (optional — graceful fallback if not configured)
+    REDIS_URL: str = ""
+
+    # Rate Limiting
+    RATE_LIMIT_PER_MINUTE: int = 60
+
+    # App
+    APP_NAME: str = "GSTFlow"
+    APP_VERSION: str = "2.0.0"
+    DEBUG: bool = False
 
     class Config:
         env_file = ".env"

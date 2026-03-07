@@ -10,8 +10,9 @@ from alembic import context
 # Import all models so Alembic detects them
 from app.database import Base
 from app.models import (  # noqa: F401
-    User, Business, Party, Invoice, InvoiceItem,
-    Payment, GstMonthlySummary, AuditLog,
+    User, RefreshToken, Business, Customer, Vendor,
+    Invoice, InvoiceItem, Payment, Document,
+    GstMonthlySummary, AuditLog,
 )
 from app.config import settings
 
@@ -51,6 +52,11 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={
+            "server_settings": {"jit": "off"},
+            "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
+        },
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

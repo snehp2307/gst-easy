@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#10a24b",
+                "background-light": "#f6f8f7",
+                "background-dark": "#112117",
+              },
+              fontFamily: {
+                "display": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+      </script>
+<title>GSTFlow - GST Automation Dashboard</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<div class="flex min-h-screen overflow-x-hidden">
+<!-- Sidebar -->
+<aside class="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col h-screen sticky top-0">
+<div class="p-6 flex items-center gap-3">
+<div class="size-10 bg-primary flex items-center justify-center rounded-lg text-white">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+</div>
+<div>
+<h1 class="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">GSTFlow</h1>
+<p class="text-xs text-slate-500">Automation Platform</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">description</span>
+<span class="text-sm font-medium">Invoices</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">receipt_long</span>
+<span class="text-sm font-medium">Bills</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">payments</span>
+<span class="text-sm font-medium">Payments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">gavel</span>
+<span class="text-sm font-medium">GST Center</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">bar_chart</span>
+<span class="text-sm font-medium">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">group</span>
+<span class="text-sm font-medium">Customers</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">store</span>
+<span class="text-sm font-medium">Vendors</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col min-w-0">
+<!-- Header -->
+<header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-8 flex items-center justify-between sticky top-0 z-10">
+<div class="flex-1 max-w-xl">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Search invoices, customers, or reports..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4 ml-8">
+<button class="relative p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-950"></span>
+</button>
+<div class="h-8 w-px bg-slate-200 dark:border-slate-800"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Rahul Sharma</p>
+<p class="text-xs text-slate-500">Administrator</p>
+</div>
+<div class="size-9 rounded-full bg-slate-200 dark:bg-slate-800 bg-cover bg-center ring-2 ring-primary/10" data-alt="User profile avatar of Rahul Sharma" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDZtaXT4U08ueSK8yWB0TryIzyyQ9l_YnIPv0W7dwmbZEyF2sPPKsqPoWx3RLoHCmZ9o1ATUTizqfwM9VpV5TBkvuFGGoNTvRK7JqB39erAMU9q_kcf8nFrtiuQ30F9WKNVYZQRFjAKFmAeR3jDpqIKabxGw_ur3TWT7Dp6FdzXSmzk7P-IxHkTsANIthMROZU08YCTF02cK-fCu-MUUyicZyE1loqa93PsZ7N4ws9Y36ov2QPI0q6K5zOcSDSJe14cEChR2DaeUy2H')"></div>
+</div>
+</div>
+</header>
+<div class="p-8 space-y-8">
+<!-- Welcome Section -->
+<div>
+<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Financial Overview</h2>
+<p class="text-slate-500">Dashboard status for the period April 1, 2024 - April 30, 2024</p>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2 bg-primary/10 rounded-lg text-primary">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">+12.5%</span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Total Revenue</p>
+<p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">₹12,40,000</p>
+</div>
+<div class="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg text-slate-600">
+<span class="material-symbols-outlined">shopping_cart</span>
+</div>
+<span class="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full">-4.2%</span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Total Expenses</p>
+<p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">₹8,20,000</p>
+</div>
+<div class="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2 bg-primary/10 rounded-lg text-primary">
+<span class="material-symbols-outlined">account_balance</span>
+</div>
+<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">+2.1%</span>
+</div>
+<p class="text-slate-500 text-sm font-medium">GST Payable</p>
+<p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">₹45,200</p>
+</div>
+<div class="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg text-orange-600">
+<span class="material-symbols-outlined">pending_actions</span>
+</div>
+<span class="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full">-8.4%</span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Outstanding Payments</p>
+<p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">₹1,15,000</p>
+</div>
+</div>
+<!-- Middle Section: Chart and Side Info -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="lg:col-span-2 bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h3 class="text-lg font-bold">Monthly Revenue Overview</h3>
+<p class="text-sm text-slate-500">Comparison of last 6 months</p>
+</div>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-slate-900 rounded-lg">Last 6 Months</button>
+<button class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50">Annual</button>
+</div>
+</div>
+<div class="relative h-64 flex items-end justify-between gap-4 px-4">
+<div class="flex-1 group relative">
+<div class="bg-primary/20 group-hover:bg-primary/30 rounded-t-lg w-full transition-all duration-300" style="height: 60%"></div>
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs py-1 px-2 rounded pointer-events-none">₹8.4L</div>
+<p class="text-xs text-slate-500 mt-3 text-center">Nov</p>
+</div>
+<div class="flex-1 group relative">
+<div class="bg-primary/20 group-hover:bg-primary/30 rounded-t-lg w-full transition-all duration-300" style="height: 45%"></div>
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs py-1 px-2 rounded pointer-events-none">₹6.2L</div>
+<p class="text-xs text-slate-500 mt-3 text-center">Dec</p>
+</div>
+<div class="flex-1 group relative">
+<div class="bg-primary/20 group-hover:bg-primary/30 rounded-t-lg w-full transition-all duration-300" style="height: 85%"></div>
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs py-1 px-2 rounded pointer-events-none">₹11.8L</div>
+<p class="text-xs text-slate-500 mt-3 text-center">Jan</p>
+</div>
+<div class="flex-1 group relative">
+<div class="bg-primary group-hover:bg-primary/90 rounded-t-lg w-full transition-all duration-300" style="height: 75%"></div>
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs py-1 px-2 rounded pointer-events-none">₹10.5L</div>
+<p class="text-xs text-slate-900 dark:text-slate-100 font-bold mt-3 text-center">Feb</p>
+</div>
+<div class="flex-1 group relative">
+<div class="bg-primary/20 group-hover:bg-primary/30 rounded-t-lg w-full transition-all duration-300" style="height: 95%"></div>
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs py-1 px-2 rounded pointer-events-none">₹12.4L</div>
+<p class="text-xs text-slate-500 mt-3 text-center">Mar</p>
+</div>
+<div class="flex-1 group relative">
+<div class="bg-primary/20 group-hover:bg-primary/30 rounded-t-lg w-full transition-all duration-300" style="height: 70%"></div>
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs py-1 px-2 rounded pointer-events-none">₹9.8L</div>
+<p class="text-xs text-slate-500 mt-3 text-center">Apr</p>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+<div>
+<h3 class="text-lg font-bold mb-1">Tax Filing Status</h3>
+<p class="text-sm text-slate-500 mb-6">Upcoming GSTR-1 Deadline</p>
+<div class="space-y-4">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-full border-4 border-primary border-t-slate-200 dark:border-t-slate-800 flex items-center justify-center">
+<span class="text-xs font-bold">75%</span>
+</div>
+<div>
+<p class="text-sm font-semibold">GSTR-1 (April)</p>
+<p class="text-xs text-slate-500">Due in 5 days</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-full border-4 border-slate-200 dark:border-slate-800 flex items-center justify-center">
+<span class="text-xs font-bold text-slate-400">0%</span>
+</div>
+<div>
+<p class="text-sm font-semibold">GSTR-3B (April)</p>
+<p class="text-xs text-slate-500">Due in 15 days</p>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-2.5 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/90 transition-colors">File Taxes Now</button>
+</div>
+</div>
+<!-- Recent Activity Table -->
+<div class="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+<div class="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+<h3 class="text-lg font-bold">Recent Invoices</h3>
+<a class="text-sm font-bold text-primary hover:underline" href="#">View All</a>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-slate-50 dark:bg-slate-900">
+<tr>
+<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Invoice ID</th>
+<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Customer</th>
+<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
+<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+<td class="px-6 py-4 text-sm font-medium">INV-2024-001</td>
+<td class="px-6 py-4 text-sm">TechNova Solutions</td>
+<td class="px-6 py-4 text-sm text-slate-500">12 Apr 2024</td>
+<td class="px-6 py-4 text-sm font-bold">₹45,000.00</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">Paid</span>
+</td>
+<td class="px-6 py-4">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+<td class="px-6 py-4 text-sm font-medium">INV-2024-002</td>
+<td class="px-6 py-4 text-sm">Zenith Marketing</td>
+<td class="px-6 py-4 text-sm text-slate-500">15 Apr 2024</td>
+<td class="px-6 py-4 text-sm font-bold">₹28,500.00</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">Pending</span>
+</td>
+<td class="px-6 py-4">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+<td class="px-6 py-4 text-sm font-medium">INV-2024-003</td>
+<td class="px-6 py-4 text-sm">CloudScale Inc</td>
+<td class="px-6 py-4 text-sm text-slate-500">02 Apr 2024</td>
+<td class="px-6 py-4 text-sm font-bold">₹12,400.00</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">Overdue</span>
+</td>
+<td class="px-6 py-4">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+<td class="px-6 py-4 text-sm font-medium">INV-2024-004</td>
+<td class="px-6 py-4 text-sm">Apex Retail</td>
+<td class="px-6 py-4 text-sm text-slate-500">18 Apr 2024</td>
+<td class="px-6 py-4 text-sm font-bold">₹89,000.00</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">Paid</span>
+</td>
+<td class="px-6 py-4">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Footer Section -->
+<footer class="mt-auto p-8 border-t border-slate-200 dark:border-slate-800 text-center">
+<p class="text-xs text-slate-500">© 2024 GSTFlow Automation Platform. All financial data is encrypted and secure.</p>
+</footer>
+</main>
+</div>
+</body></html>

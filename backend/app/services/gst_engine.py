@@ -272,3 +272,81 @@ def to_paise(rupees: float) -> int:
 def to_rupees(paise: int) -> float:
     """Convert paise to rupees."""
     return paise / 100
+
+
+# ─────────────────────────────────────────
+# Convenience Wrappers (used by modules)
+# ─────────────────────────────────────────
+
+def calculate_item_gst(
+    unit_price: int,
+    quantity: float,
+    discount: int,
+    gst_rate: float,
+    is_inter_state: bool,
+) -> dict:
+    """Dict-returning wrapper for calculate_line_item_gst."""
+    result = calculate_line_item_gst(
+        quantity=quantity,
+        unit_price=unit_price,
+        gst_rate=gst_rate,
+        inter_state=is_inter_state,
+        discount=discount,
+    )
+    return {
+        "taxable_value": result.taxable_value,
+        "cgst_rate": result.cgst_rate,
+        "sgst_rate": result.sgst_rate,
+        "igst_rate": result.igst_rate,
+        "cgst_amount": result.cgst_amount,
+        "sgst_amount": result.sgst_amount,
+        "igst_amount": result.igst_amount,
+        "total_amount": result.total_amount,
+    }
+
+
+async def compute_gst_summary(db, business_id, period: str) -> dict:
+    """Compute GST summary for a given period (YYYY-MM) from invoices."""
+    from sqlalchemy import select, func, extract
+    from app.models import Invoice
+
+    year, month = period.split("-")
+
+    async def _sum_gst(inv_type):
+        result = await db.execute(
+            select(
+                func.coalesce(func.sum(Invoice.total_taxable_value), 0),
+                func.coalesce(func.sum(Invoice.total_cgst), 0),
+                func.coalesce(func.sum(Invoice.total_sgst), 0),
+                func.coalesce(func.sum(Invoice.total_igst), 0),
+                func.count(Invoice.id),
+            ).where(
+                Invoice.business_id == business_id,
+                Invoice.invoice_type == inv_type,
+                extract("year", Invoice.invoice_date) == int(year),
+                extract("month", Invoice.invoice_date) == int(month),
+            )
+        )
+        return result.one()
+
+    s_taxable, s_cgst, s_sgst, s_igst, s_count = await _sum_gst("sale")
+    p_taxable, p_cgst, p_sgst, p_igst, p_count = await _sum_gst("purchase")
+
+    output = GstBreakup(cgst=s_cgst, sgst=s_sgst, igst=s_igst)
+    itc = GstBreakup(cgst=p_cgst, sgst=p_sgst, igst=p_igst)
+    net = calculate_net_payable(output, itc)
+    explanation = generate_explanation(output, itc, net, s_count, p_count, itc.total)
+
+    return {
+        "period": period,
+        "output_gst": {"cgst": s_cgst, "sgst": s_sgst, "igst": s_igst, "total": output.total},
+        "itc": {"cgst": p_cgst, "sgst": p_sgst, "igst": p_igst, "total": itc.total},
+        "net_payable": {"cgst": net.cgst, "sgst": net.sgst, "igst": net.igst, "total": net.total},
+        "itc_carryforward": net.itc_carryforward,
+        "sales_count": s_count,
+        "purchases_count": p_count,
+        "total_taxable_sales": s_taxable,
+        "total_taxable_purchases": p_taxable,
+        "explanation": explanation,
+        "return_status": "draft",
+    }
