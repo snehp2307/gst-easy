@@ -28,7 +28,7 @@ export default function SignupPage() {
         setError('');
         setLoading(true);
         try {
-            await register(name, phone, password);
+            await register(phone, password, name);
             setStep('business');
         } catch (err: any) {
             setError(err.message || 'Registration failed');
