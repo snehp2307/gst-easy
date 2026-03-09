@@ -3,7 +3,12 @@
  * All frontend pages use this to communicate with the Python backend.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+let API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+
+// Auto-correct if the user forgot /api/v1 in their Vercel environment variable
+if (API_BASE && !API_BASE.endsWith('/api/v1')) {
+    API_BASE = API_BASE.replace(/\/$/, '') + '/api/v1';
+}
 
 interface ApiOptions {
     method?: string;
