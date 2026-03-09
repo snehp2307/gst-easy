@@ -25,16 +25,12 @@ export default function BillsPage() {
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
         setShowUpload(false);
         setUploadStatus('uploading');
-
         try {
             setUploadStatus('processing');
             const result = await uploadBill(file);
             setOcrResult(result);
-
-            // Pre-fill from OCR
             const f = result.fields;
             setSupplierName((f.supplier_name as string) || '');
             setSupplierGstin((f.supplier_gstin as string) || '');
@@ -42,10 +38,8 @@ export default function BillsPage() {
             setInvoiceDate((f.invoice_date as string) || new Date().toISOString().split('T')[0]);
             setTaxableValue(String((f.taxable_value as number) || ''));
             setTotalAmount(String((f.total_amount as number) || ''));
-
             setUploadStatus('review');
         } catch {
-            // Fallback: show review with empty fields
             setOcrResult({ fields: {}, raw_text: '', confidence: 0, confidence_score: 'yellow' });
             setUploadStatus('review');
         }
@@ -56,7 +50,6 @@ export default function BillsPage() {
             const tv = Math.round(parseFloat(taxableValue || '0') * 100);
             const ta = Math.round(parseFloat(totalAmount || '0') * 100);
             const gstAmount = ta - tv;
-
             await confirmBill({
                 supplier_name: supplierName,
                 supplier_gstin: supplierGstin || undefined,
@@ -76,129 +69,154 @@ export default function BillsPage() {
     };
 
     return (
-        <div className="animate-fadeIn">
-            <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1 style={{ fontSize: '20px', fontWeight: '800' }}>Purchase Bills</h1>
-                <button className="btn btn-primary btn-sm" onClick={() => setShowUpload(true)}>📷 Upload</button>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Purchase Bills</h2>
+                    <p className="text-slate-500 mt-1">Upload and manage vendor bills for ITC claiming</p>
+                </div>
+                <button
+                    onClick={() => setShowUpload(true)}
+                    className="bg-[#10a24b] hover:bg-[#10a24b]/90 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-sm"
+                >
+                    <span className="material-symbols-outlined text-sm">document_scanner</span>
+                    Upload Bill
+                </button>
             </div>
 
-            {/* ITC Summary */}
-            <div style={{ padding: '0 16px 12px', display: 'flex', gap: '8px' }}>
-                <div style={{ flex: 1, padding: '10px', background: 'var(--green-bg)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#166534' }}>✅ Eligible</div>
-                    <div style={{ fontSize: '16px', fontWeight: '800', color: '#22c55e' }}>₹0</div>
+            {/* ITC Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="p-2 rounded-lg bg-[#10a24b]/10 text-[#10a24b]"><span className="material-symbols-outlined">check_circle</span></div>
+                        <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">Eligible</span>
+                    </div>
+                    <p className="text-sm font-medium text-slate-500">ITC Eligible</p>
+                    <p className="text-2xl font-bold text-slate-900 mt-1">₹0</p>
                 </div>
-                <div style={{ flex: 1, padding: '10px', background: 'var(--yellow-bg)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#92400e' }}>⚠️ Review</div>
-                    <div style={{ fontSize: '16px', fontWeight: '800', color: '#f59e0b' }}>₹0</div>
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500"><span className="material-symbols-outlined">warning</span></div>
+                        <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-full">Review Needed</span>
+                    </div>
+                    <p className="text-sm font-medium text-slate-500">ITC Under Review</p>
+                    <p className="text-2xl font-bold text-slate-900 mt-1">₹0</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500"><span className="material-symbols-outlined">receipt_long</span></div>
+                        <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-1 rounded-full">Total</span>
+                    </div>
+                    <p className="text-sm font-medium text-slate-500">Total Bills</p>
+                    <p className="text-2xl font-bold text-slate-900 mt-1">0</p>
                 </div>
             </div>
 
-            {/* Filter Chips */}
-            <div className="filter-chips">
-                {['all', 'eligible', 'needs_review'].map(f => (
-                    <button key={f} className={`chip ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-                        {f === 'all' ? 'All' : f === 'eligible' ? '✅ Eligible' : '⚠️ Review'}
+            {/* Filters */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
+                {[
+                    { label: 'All', value: 'all' },
+                    { label: '✅ Eligible', value: 'eligible' },
+                    { label: '⚠️ Review', value: 'needs_review' },
+                ].map(f => (
+                    <button
+                        key={f.value}
+                        onClick={() => setFilter(f.value)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === f.value ? 'bg-[#10a24b] text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                            }`}
+                    >
+                        {f.label}
                     </button>
                 ))}
             </div>
 
-            {/* Empty state */}
-            <div style={{ textAlign: 'center', padding: '60px' }}>
-                <div style={{ fontSize: '48px', marginBottom: '12px' }}>📸</div>
-                <div style={{ fontWeight: '600', marginBottom: '4px' }}>No bills yet</div>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                    Upload your first purchase bill to start tracking ITC
+            {/* Empty State */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+                <div className="w-16 h-16 mx-auto bg-[#10a24b]/10 rounded-2xl flex items-center justify-center mb-4">
+                    <span className="material-symbols-outlined text-[#10a24b] text-3xl">document_scanner</span>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowUpload(true)}>
-                    📷 Upload Bill
+                <h3 className="text-lg font-bold text-slate-900 mb-2">No bills yet</h3>
+                <p className="text-sm text-slate-500 mb-6">Upload your first purchase bill to start tracking ITC</p>
+                <button
+                    onClick={() => setShowUpload(true)}
+                    className="bg-[#10a24b] hover:bg-[#10a24b]/90 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-all inline-flex items-center gap-2"
+                >
+                    <span className="material-symbols-outlined text-lg">cloud_upload</span>
+                    Upload Bill
                 </button>
             </div>
 
             {/* Upload Modal */}
             {showUpload && (
-                <div className="modal-overlay" onClick={() => setShowUpload(false)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <h2 className="modal-title">📷 Upload Purchase Bill</h2>
-                        <div style={{ border: '2px dashed var(--border)', borderRadius: 'var(--radius)', padding: '40px 20px', textAlign: 'center', cursor: 'pointer' }}
-                            onClick={() => fileInputRef.current?.click()}>
-                            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📸</div>
-                            <div style={{ fontWeight: '600', marginBottom: '4px' }}>Take Photo or Upload File</div>
-                            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>JPG, PNG, PDF — max 10MB</div>
-                            <input ref={fileInputRef} type="file" accept="image/*,.pdf" capture="environment"
-                                style={{ display: 'none' }} onChange={handleFileSelect} />
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowUpload(false)}>
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[#10a24b]">document_scanner</span> Upload Purchase Bill
+                        </h2>
+                        <div
+                            className="border-2 border-dashed border-slate-300 hover:border-[#10a24b] rounded-xl p-10 text-center cursor-pointer transition-colors"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <span className="material-symbols-outlined text-slate-400 text-4xl block mb-3">cloud_upload</span>
+                            <p className="text-sm font-semibold text-slate-700">Take Photo or Upload File</p>
+                            <p className="text-xs text-slate-500 mt-1">JPG, PNG, PDF — max 10MB</p>
+                            <input ref={fileInputRef} type="file" accept="image/*,.pdf" capture="environment" className="hidden" onChange={handleFileSelect} />
                         </div>
-                        <button className="btn btn-ghost" onClick={() => setShowUpload(false)} style={{ width: '100%', marginTop: '12px' }}>Cancel</button>
+                        <button onClick={() => setShowUpload(false)} className="w-full mt-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-medium text-sm hover:bg-slate-200 transition-colors">
+                            Cancel
+                        </button>
                     </div>
                 </div>
             )}
 
-            {/* Processing */}
+            {/* Processing Modal */}
             {(uploadStatus === 'uploading' || uploadStatus === 'processing') && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ textAlign: 'center', padding: '40px' }}>
-                        <div style={{ fontSize: '48px', marginBottom: '16px', animation: 'pulse 1.5s infinite' }}>
-                            {uploadStatus === 'uploading' ? '📤' : '🔍'}
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-10 text-center shadow-2xl">
+                        <div className="w-16 h-16 mx-auto bg-[#10a24b]/10 rounded-2xl flex items-center justify-center mb-4 animate-pulse">
+                            <span className="material-symbols-outlined text-[#10a24b] text-3xl">{uploadStatus === 'uploading' ? 'cloud_upload' : 'auto_awesome'}</span>
                         </div>
-                        <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '4px' }}>
-                            {uploadStatus === 'uploading' ? 'Uploading...' : 'Running OCR...'}
-                        </div>
-                        <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                        <h3 className="text-lg font-bold text-slate-900 mb-1">
+                            {uploadStatus === 'uploading' ? 'Uploading...' : 'Running AI OCR...'}
+                        </h3>
+                        <p className="text-sm text-slate-500">
                             {uploadStatus === 'uploading' ? 'Compressing your bill' : 'Extracting invoice details'}
-                        </div>
+                        </p>
                     </div>
                 </div>
             )}
 
-            {/* OCR Review */}
+            {/* OCR Review Modal */}
             {uploadStatus === 'review' && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <h2 className="modal-title" style={{ margin: 0 }}>Review Extracted Data</h2>
-                            <span className={`badge badge-${ocrResult?.confidence_score || 'yellow'}`}>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-lg font-bold text-slate-900">Review Extracted Data</h2>
+                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${ocrResult?.confidence_score === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                }`}>
                                 {ocrResult?.confidence_score === 'green' ? '🟢' : '🟡'} {Math.round(ocrResult?.confidence || 0)}%
                             </span>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">Supplier Name *</label>
-                                <input className="form-input" value={supplierName} onChange={e => setSupplierName(e.target.value)} />
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">Supplier GSTIN</label>
-                                <input className="form-input" value={supplierGstin} onChange={e => setSupplierGstin(e.target.value.toUpperCase())}
-                                    style={{ fontFamily: 'monospace' }} maxLength={15} />
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">Invoice Number *</label>
-                                <input className="form-input" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} />
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">Invoice Date *</label>
-                                <input className="form-input" type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <label className="form-label">Taxable Value (₹)</label>
-                                    <input className="form-input" type="number" value={taxableValue} onChange={e => setTaxableValue(e.target.value)} />
-                                </div>
-                                <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <label className="form-label">Total Amount (₹)</label>
-                                    <input className="form-input" type="number" value={totalAmount} onChange={e => setTotalAmount(e.target.value)} />
-                                </div>
+                        <div className="space-y-4">
+                            <div><label className="text-sm font-medium text-slate-700 block mb-1.5">Supplier Name *</label><input className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#10a24b] focus:ring-2 focus:ring-[#10a24b]/10" value={supplierName} onChange={e => setSupplierName(e.target.value)} /></div>
+                            <div><label className="text-sm font-medium text-slate-700 block mb-1.5">Supplier GSTIN</label><input className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#10a24b] focus:ring-2 focus:ring-[#10a24b]/10 font-mono" value={supplierGstin} onChange={e => setSupplierGstin(e.target.value.toUpperCase())} maxLength={15} /></div>
+                            <div><label className="text-sm font-medium text-slate-700 block mb-1.5">Invoice Number *</label><input className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#10a24b] focus:ring-2 focus:ring-[#10a24b]/10" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} /></div>
+                            <div><label className="text-sm font-medium text-slate-700 block mb-1.5">Invoice Date *</label><input type="date" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#10a24b] focus:ring-2 focus:ring-[#10a24b]/10" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} /></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><label className="text-sm font-medium text-slate-700 block mb-1.5">Taxable Value (₹)</label><input type="number" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#10a24b] focus:ring-2 focus:ring-[#10a24b]/10" value={taxableValue} onChange={e => setTaxableValue(e.target.value)} /></div>
+                                <div><label className="text-sm font-medium text-slate-700 block mb-1.5">Total Amount (₹)</label><input type="number" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#10a24b] focus:ring-2 focus:ring-[#10a24b]/10" value={totalAmount} onChange={e => setTotalAmount(e.target.value)} /></div>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                            <button className="btn btn-ghost btn-lg" onClick={() => { setUploadStatus('idle'); setOcrResult(null); }} style={{ flex: 1 }}>Cancel</button>
-                            <button className="btn btn-primary btn-lg" onClick={handleConfirm} style={{ flex: 2 }}
-                                disabled={!supplierName || !invoiceNumber}>✅ Confirm & Save</button>
+                        <div className="flex gap-3 mt-6">
+                            <button onClick={() => { setUploadStatus('idle'); setOcrResult(null); }} className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-medium text-sm hover:bg-slate-200 transition-colors">Cancel</button>
+                            <button onClick={handleConfirm} disabled={!supplierName || !invoiceNumber} className="flex-[2] py-2.5 bg-[#10a24b] text-white rounded-lg font-bold text-sm hover:bg-[#10a24b]/90 transition-colors disabled:opacity-50">
+                                ✅ Confirm & Save
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
-
-            <button className="fab" onClick={() => setShowUpload(true)}>📷</button>
         </div>
     );
 }

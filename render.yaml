@@ -1,0 +1,52 @@
+# ─────────────────────────────────────────
+# GSTFlow — Render Blueprint (render.yaml)
+# Deploy both frontend and backend services
+# ─────────────────────────────────────────
+
+services:
+  # ── Backend API (FastAPI) ──────────────
+  - type: web
+    name: gstflow-backend
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    rootDir: backend
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_ACCESS_HOURS
+        value: "24"
+      - key: JWT_REFRESH_DAYS
+        value: "30"
+      - key: CORS_ORIGINS
+        value: '["https://gst-easy.vercel.app","http://localhost:3000"]'
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "120"
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: PORT
+        value: "10000"
+
+  # ── Frontend (Next.js) ─────────────────
+  - type: web
+    name: gstflow-frontend
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm install --legacy-peer-deps && npm run build
+    startCommand: npm start
+    rootDir: gst-app
+    autoDeploy: true
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://gstflow-backend.onrender.com/api/v1
+      - key: NODE_VERSION
+        value: "20"

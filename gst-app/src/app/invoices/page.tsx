@@ -36,6 +36,7 @@ export default function InvoicesPage() {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [total, setTotal] = useState(0);
     const [filter, setFilter] = useState('all');
+    const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const fmt = formatPaiseClient;
 
@@ -47,111 +48,169 @@ export default function InvoicesPage() {
             .finally(() => setLoading(false));
     }, [filter]);
 
-    const filters = [
-        { label: 'All', value: 'all' },
-        { label: 'Paid', value: 'paid' },
-        { label: 'Pending', value: 'unpaid' },
-        { label: 'Overdue', value: 'overdue' },
-    ];
+    const filtered = invoices.filter(inv =>
+        !search || inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
+        (inv.customer_name || '').toLowerCase().includes(search.toLowerCase())
+    );
 
     return (
-        <div className="animate-fadeIn">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
                 <div>
-                    <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Invoices</h2>
-                    <p style={{ color: '#64748b', marginTop: '4px' }}>{total} total invoices</p>
+                    <h2 className="text-2xl font-bold text-slate-900">Invoices</h2>
+                    <p className="text-slate-500 mt-1">{total} total invoices</p>
                 </div>
-                <Link href="/invoices/new" className="btn-primary" style={{ textDecoration: 'none' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
+                <Link
+                    href="/invoices/create"
+                    className="bg-[#10a24b] hover:bg-[#10a24b]/90 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-sm no-underline"
+                >
+                    <span className="material-symbols-outlined text-sm">add</span>
                     Create Invoice
                 </Link>
             </div>
 
             {/* Filters */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-                {filters.map(f => (
-                    <button
-                        key={f.value}
-                        onClick={() => setFilter(f.value)}
-                        style={{
-                            padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
-                            border: filter === f.value ? 'none' : '1px solid #e2e8f0',
-                            background: filter === f.value ? '#10a24b' : '#fff',
-                            color: filter === f.value ? '#fff' : '#475569',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        {f.label}
-                    </button>
-                ))}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-4">
+                <div className="flex-1 min-w-[300px] relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="w-full bg-slate-50 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#10a24b]/20 outline-none"
+                        placeholder="Search invoice, customer, or amount..."
+                    />
+                </div>
+                <div className="flex items-center gap-2">
+                    {[
+                        { label: 'All Statuses', value: 'all' },
+                        { label: 'Paid', value: 'paid' },
+                        { label: 'Pending', value: 'unpaid' },
+                        { label: 'Overdue', value: 'overdue' },
+                    ].map(f => (
+                        <button
+                            key={f.value}
+                            onClick={() => setFilter(f.value)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${filter === f.value
+                                    ? 'bg-[#10a24b] text-white'
+                                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                }`}
+                        >
+                            {f.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Table */}
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Invoice #</th>
-                            <th>Customer</th>
-                            <th>Date</th>
-                            <th>Amount</th>
-                            <th>GST (18%)</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {invoices.map(inv => (
-                            <tr key={inv.id}>
-                                <td style={{ fontWeight: 500 }}>{inv.invoice_number}</td>
-                                <td>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <div style={{
-                                            width: '32px', height: '32px', borderRadius: '50%',
-                                            background: '#f1f5f9', display: 'flex', alignItems: 'center',
-                                            justifyContent: 'center', fontSize: '13px', fontWeight: 600, color: '#64748b',
-                                        }}>
-                                            {(inv.customer_name || '?')[0].toUpperCase()}
-                                        </div>
-                                        {inv.customer_name || '—'}
-                                    </div>
-                                </td>
-                                <td style={{ color: '#64748b' }}>
-                                    {new Date(inv.invoice_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                </td>
-                                <td style={{ fontWeight: 700 }}>₹{fmt(inv.total_amount)}</td>
-                                <td style={{ color: '#10a24b', fontWeight: 500 }}>
-                                    ₹{fmt(inv.total_cgst + inv.total_sgst + inv.total_igst)}
-                                </td>
-                                <td>
-                                    <span className={`badge ${inv.payment_status === 'paid' ? 'badge-green' : inv.payment_status === 'overdue' ? 'badge-red' : 'badge-orange'}`}>
-                                        {inv.payment_status.charAt(0).toUpperCase() + inv.payment_status.slice(1)}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div style={{ display: 'flex', gap: '4px' }}>
-                                        <button style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>visibility</span>
-                                        </button>
-                                        <button style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>download</span>
-                                        </button>
-                                        <button style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit</span>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {invoices.length === 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <td colSpan={7} style={{ textAlign: 'center', color: '#94a3b8', padding: '48px' }}>
-                                    {loading ? 'Loading...' : 'No invoices found'}
-                                </td>
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Invoice #</th>
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Customer</th>
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">GST (18%)</th>
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filtered.map(inv => (
+                                <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="px-6 py-4 text-sm font-semibold text-[#10a24b]">{inv.invoice_number}</td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-[#10a24b]/10 text-[#10a24b] flex items-center justify-center text-xs font-bold">
+                                                {(inv.customer_name || '?')[0].toUpperCase()}
+                                            </div>
+                                            <span className="text-sm font-medium text-slate-900">{inv.customer_name || '—'}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-slate-600">
+                                        {new Date(inv.invoice_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-semibold text-slate-900">₹{fmt(inv.total_amount)}</td>
+                                    <td className="px-6 py-4 text-sm text-slate-600">₹{fmt(inv.total_cgst + inv.total_sgst + inv.total_igst)}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${inv.payment_status === 'paid'
+                                                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                                : inv.payment_status === 'overdue'
+                                                    ? 'bg-red-100 text-red-800 border-red-200'
+                                                    : 'bg-amber-100 text-amber-800 border-amber-200'
+                                            }`}>
+                                            {inv.payment_status.charAt(0).toUpperCase() + inv.payment_status.slice(1)}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button className="p-1 text-slate-400 hover:text-[#10a24b] transition-colors"><span className="material-symbols-outlined text-lg">visibility</span></button>
+                                            <button className="p-1 text-slate-400 hover:text-[#10a24b] transition-colors"><span className="material-symbols-outlined text-lg">download</span></button>
+                                            <button className="p-1 text-slate-400 hover:text-[#10a24b] transition-colors"><span className="material-symbols-outlined text-lg">edit</span></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {filtered.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="text-center text-slate-400 py-12">
+                                        {loading ? 'Loading...' : 'No invoices found'}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                    <p className="text-sm text-slate-500">
+                        Showing <span className="font-medium">1</span> to <span className="font-medium">{filtered.length}</span> of <span className="font-medium">{total}</span> invoices
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <button disabled className="p-2 border border-slate-200 rounded-lg text-slate-400 disabled:opacity-50">
+                            <span className="material-symbols-outlined text-sm">chevron_left</span>
+                        </button>
+                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#10a24b] text-white text-sm font-medium">1</button>
+                        <button className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:bg-white">
+                            <span className="material-symbols-outlined text-sm">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Stats Footer */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-[#10a24b]/5 border border-[#10a24b]/10 p-6 rounded-xl flex items-center gap-4">
+                    <div className="p-3 bg-[#10a24b]/20 rounded-lg text-[#10a24b]">
+                        <span className="material-symbols-outlined">account_balance</span>
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-[#10a24b] uppercase tracking-tight">Total Collected</p>
+                        <p className="text-xl font-bold text-slate-900">₹{fmt(invoices.filter(i => i.payment_status === 'paid').reduce((s, i) => s + i.total_amount, 0))}</p>
+                    </div>
+                </div>
+                <div className="bg-amber-500/5 border border-amber-500/10 p-6 rounded-xl flex items-center gap-4">
+                    <div className="p-3 bg-amber-500/20 rounded-lg text-amber-600">
+                        <span className="material-symbols-outlined">pending_actions</span>
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-amber-600 uppercase tracking-tight">Outstanding</p>
+                        <p className="text-xl font-bold text-slate-900">₹{fmt(invoices.filter(i => i.payment_status !== 'paid').reduce((s, i) => s + i.total_amount, 0))}</p>
+                    </div>
+                </div>
+                <div className="bg-blue-500/5 border border-blue-500/10 p-6 rounded-xl flex items-center gap-4">
+                    <div className="p-3 bg-blue-500/20 rounded-lg text-blue-600">
+                        <span className="material-symbols-outlined">trending_up</span>
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-blue-600 uppercase tracking-tight">GST Liability</p>
+                        <p className="text-xl font-bold text-slate-900">₹{fmt(invoices.reduce((s, i) => s + i.total_cgst + i.total_sgst + i.total_igst, 0))}</p>
+                    </div>
+                </div>
             </div>
         </div>
     );

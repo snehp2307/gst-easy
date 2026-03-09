@@ -27,30 +27,79 @@ export default function PaymentsPage() {
             .finally(() => setLoading(false));
     }, []);
 
+    const modeColors: Record<string, string> = {
+        upi: 'bg-violet-100 text-violet-700 border-violet-200',
+        bank_transfer: 'bg-blue-100 text-blue-700 border-blue-200',
+        cash: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        cheque: 'bg-amber-100 text-amber-700 border-amber-200',
+    };
+
     return (
-        <div className="animate-fadeIn">
-            <div style={{ marginBottom: '32px' }}>
-                <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Payments</h2>
-                <p style={{ color: '#64748b', marginTop: '4px' }}>{total} total payments</p>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Payments</h2>
+                    <p className="text-slate-500 mt-1">{total} total payments</p>
+                </div>
+                <button className="bg-[#10a24b] hover:bg-[#10a24b]/90 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-sm">
+                    <span className="material-symbols-outlined text-sm">add</span>
+                    Record Payment
+                </button>
             </div>
 
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <table className="data-table">
-                    <thead><tr><th>Date</th><th>Amount</th><th>Mode</th><th>Reference</th><th>Recorded</th></tr></thead>
-                    <tbody>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="p-2 rounded-lg bg-[#10a24b]/10 text-[#10a24b]"><span className="material-symbols-outlined">account_balance_wallet</span></div>
+                    </div>
+                    <p className="text-sm font-medium text-slate-500">Total Received</p>
+                    <p className="text-2xl font-bold text-slate-900 mt-1">₹{fmt(payments.reduce((s, p) => s + p.amount, 0))}</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="p-2 rounded-lg bg-blue-100 text-blue-500"><span className="material-symbols-outlined">receipt</span></div>
+                    </div>
+                    <p className="text-sm font-medium text-slate-500">This Month</p>
+                    <p className="text-2xl font-bold text-slate-900 mt-1">₹{fmt(payments.filter(p => new Date(p.payment_date).getMonth() === new Date().getMonth()).reduce((s, p) => s + p.amount, 0))}</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="p-2 rounded-lg bg-amber-100 text-amber-500"><span className="material-symbols-outlined">credit_card</span></div>
+                    </div>
+                    <p className="text-sm font-medium text-slate-500">Total Transactions</p>
+                    <p className="text-2xl font-bold text-slate-900 mt-1">{payments.length}</p>
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Mode</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Reference</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Recorded</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
                         {payments.map(p => (
-                            <tr key={p.id}>
-                                <td>{new Date(p.payment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                <td style={{ fontWeight: 700 }}>₹{fmt(p.amount)}</td>
-                                <td><span className="badge badge-blue">{p.payment_mode}</span></td>
-                                <td style={{ fontFamily: 'monospace', fontSize: '13px' }}>{p.reference_number || '—'}</td>
-                                <td style={{ color: '#64748b', fontSize: '13px' }}>
-                                    {new Date(p.created_at).toLocaleDateString('en-IN')}
+                            <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="px-6 py-4 text-sm text-slate-900 font-medium">{new Date(p.payment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                <td className="px-6 py-4 text-sm font-bold text-slate-900">₹{fmt(p.amount)}</td>
+                                <td className="px-6 py-4">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${modeColors[p.payment_mode] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                                        {p.payment_mode.replace('_', ' ').toUpperCase()}
+                                    </span>
                                 </td>
+                                <td className="px-6 py-4 text-sm text-slate-600 font-mono">{p.reference_number || '—'}</td>
+                                <td className="px-6 py-4 text-sm text-slate-500">{new Date(p.created_at).toLocaleDateString('en-IN')}</td>
                             </tr>
                         ))}
                         {payments.length === 0 && (
-                            <tr><td colSpan={5} style={{ textAlign: 'center', color: '#94a3b8', padding: '48px' }}>{loading ? 'Loading...' : 'No payments recorded yet'}</td></tr>
+                            <tr><td colSpan={5} className="text-center text-slate-400 py-12">{loading ? 'Loading...' : 'No payments recorded yet'}</td></tr>
                         )}
                     </tbody>
                 </table>

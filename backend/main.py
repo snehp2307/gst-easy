@@ -26,6 +26,9 @@ from app.modules.gst.router import router as gst_router
 from app.modules.analytics.router import router as analytics_router
 from app.modules.reports.router import router as reports_router
 from app.modules.documents.router import router as documents_router
+from app.modules.products.router import router as products_router
+from app.modules.ai.router import router as ai_router
+from app.modules.cms.router import router as cms_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
@@ -82,6 +85,9 @@ app.include_router(gst_router, prefix=f"{API_V1}/gst", tags=["GST Center"])
 app.include_router(analytics_router, prefix=f"{API_V1}/analytics", tags=["Analytics & Dashboard"])
 app.include_router(reports_router, prefix=f"{API_V1}/reports", tags=["Reports"])
 app.include_router(documents_router, prefix=f"{API_V1}/documents", tags=["Documents"])
+app.include_router(products_router, prefix=f"{API_V1}/products", tags=["Products"])
+app.include_router(ai_router, prefix=f"{API_V1}/ai", tags=["AI Services"])
+app.include_router(cms_router, prefix=f"{API_V1}", tags=["CMS"])
 
 
 # ─── Health Check ─────────────────────────

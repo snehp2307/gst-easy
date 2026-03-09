@@ -6,8 +6,13 @@ from typing import List
 
 
 class Settings(BaseSettings):
-    # Database
+    # Database (SQLAlchemy async — primary connection)
     DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/gst_app"
+
+    # Supabase SDK (optional — for storage, auth, realtime)
+    SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
+    SUPABASE_SERVICE_KEY: str = ""
 
     # Auth — JWT
     JWT_SECRET: str = "dev-secret-change-in-production"

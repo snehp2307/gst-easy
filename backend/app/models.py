@@ -113,6 +113,7 @@ class Business(Base):
     documents = relationship("Document", back_populates="business", cascade="all, delete-orphan")
     gst_summaries = relationship("GstMonthlySummary", back_populates="business")
     audit_logs = relationship("AuditLog", back_populates="business")
+    products = relationship("Product", back_populates="business", cascade="all, delete-orphan")
 
     __table_args__ = (Index("ix_businesses_user_id", "user_id"),)
 
@@ -174,6 +175,38 @@ class Vendor(Base):
     __table_args__ = (
         Index("ix_vendors_business", "business_id"),
         Index("ix_vendors_gstin", "gstin"),
+    )
+
+
+# ─────────────────────────────────────────
+# Products / Inventory
+# ─────────────────────────────────────────
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    hsn_code = Column(String(8), nullable=True)
+    unit = Column(String(20), default="NOS")
+    unit_price = Column(BigInteger, default=0)  # paise
+    gst_rate = Column(Float, default=18.0)
+    stock_quantity = Column(Integer, default=0)
+    low_stock_threshold = Column(Integer, default=10)
+    sku = Column(String(50), nullable=True)
+    category = Column(String(100), nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    business = relationship("Business", back_populates="products")
+
+    __table_args__ = (
+        Index("ix_products_business", "business_id"),
+        Index("ix_products_hsn", "hsn_code"),
+        UniqueConstraint("business_id", "sku", name="uq_product_sku"),
     )
 
 
@@ -421,3 +454,208 @@ class AuditLog(Base):
         Index("ix_audit_entity", "entity_type", "entity_id"),
         Index("ix_audit_biz_time", "business_id", "created_at"),
     )
+
+
+# ─────────────────────────────────────────
+# CMS — Blog, Support Articles, Company Pages
+# ─────────────────────────────────────────
+
+class BlogPost(Base):
+    __tablename__ = "blog_posts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title = Column(String(500), nullable=False)
+    slug = Column(String(200), unique=True, nullable=False)
+    content = Column(Text, nullable=False)
+    author = Column(String(200), default="GSTFlow Team")
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+    __table_args__ = (Index("ix_blog_slug", "slug"),)
+
+
+class SupportArticle(Base):
+    __tablename__ = "support_articles"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title = Column(String(500), nullable=False)
+    content = Column(Text, nullable=False)
+    category = Column(String(100), default="General")
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class CompanyPage(Base):
+    __tablename__ = "company_pages"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title = Column(String(300), nullable=False)
+    slug = Column(String(200), unique=True, nullable=False)
+    content = Column(Text, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (Index("ix_company_slug", "slug"),)
+
+
+# ─────────────────────────────────────────
+# Multi-tenant mapping
+# ─────────────────────────────────────────
+
+class UserBusinessMap(Base):
+    __tablename__ = "user_business_map"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id"), nullable=False)
+    role = Column(String(20), default="admin")
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "business_id"),
+        Index("ix_ubm_user", "user_id"),
+        Index("ix_ubm_business", "business_id"),
+    )
+
+
+# ─────────────────────────────────────────
+# Inventory
+# ─────────────────────────────────────────
+
+class Inventory(Base):
+    __tablename__ = "inventory"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False)
+    stock_quantity = Column(Float, default=0)
+    unit = Column(String(20), default="NOS")
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+    product = relationship("Product")
+
+
+# ─────────────────────────────────────────
+# Bill Items (purchase line items for bills table)
+# ─────────────────────────────────────────
+
+class BillItem(Base):
+    __tablename__ = "bill_items"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    bill_id = Column(UUID(as_uuid=True), ForeignKey("bills.id"), nullable=False)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=True)
+    description = Column(Text)
+    quantity = Column(Float, default=1)
+    price = Column(Float, default=0)
+    gst_rate = Column(Float, default=18.0)
+    total = Column(Float, default=0)
+
+
+
+# ─────────────────────────────────────────
+# OCR Extractions
+# ─────────────────────────────────────────
+
+class OcrExtraction(Base):
+    __tablename__ = "ocr_extractions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=False)
+    vendor_name = Column(Text)
+    gstin = Column(Text)
+    amount = Column(Float)
+    extracted_json = Column(JSON)
+    confidence = Column(Float)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+    document = relationship("Document")
+
+
+# ─────────────────────────────────────────
+# GST Returns
+# ─────────────────────────────────────────
+
+class GstReturn(Base):
+    __tablename__ = "gst_returns"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id"), nullable=False)
+    return_type = Column(String(20), nullable=False)
+    period = Column(String(20), nullable=False)
+    gst_payable = Column(Float, default=0)
+    output_cgst = Column(BigInteger, default=0)
+    output_sgst = Column(BigInteger, default=0)
+    output_igst = Column(BigInteger, default=0)
+    itc_cgst = Column(BigInteger, default=0)
+    itc_sgst = Column(BigInteger, default=0)
+    itc_igst = Column(BigInteger, default=0)
+    net_payable = Column(BigInteger, default=0)
+    status = Column(String(20), default="pending")
+    filed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+    business = relationship("Business")
+
+
+# ─────────────────────────────────────────
+# AI Insights
+# ─────────────────────────────────────────
+
+class AiInsight(Base):
+    __tablename__ = "ai_insights"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id"), nullable=False)
+    insight_type = Column(String(50), nullable=False)
+    message = Column(Text, nullable=False)
+    severity = Column(String(20), default="info")
+    data = Column(JSON)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+# ─────────────────────────────────────────
+# AI Queries (chat history)
+# ─────────────────────────────────────────
+
+class AiQuery(Base):
+    __tablename__ = "ai_queries"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id"), nullable=True)
+    question = Column(Text, nullable=False)
+    response = Column(Text)
+    response_data = Column(JSON)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+# ─────────────────────────────────────────
+# Subscriptions
+# ─────────────────────────────────────────
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id"), nullable=False)
+    plan = Column(String(30), default="starter")
+    status = Column(String(20), default="active")
+    billing_cycle = Column(String(20), default="monthly")
+    amount = Column(Float, default=749.0)
+    started_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+# ─────────────────────────────────────────
+# Notifications
+# ─────────────────────────────────────────
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id"), nullable=False)
+    title = Column(String(300), nullable=False)
+    message = Column(Text, nullable=False)
+    notification_type = Column(String(30), default="info")
+    read_status = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)

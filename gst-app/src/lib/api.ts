@@ -262,6 +262,15 @@ export function getJsonExportUrl(period: string): string {
     return `${API_BASE}/reports/json?period=${period}`;
 }
 
+export async function downloadReport(format: string): Promise<Blob> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gst_token') : null;
+    const response = await fetch(`${API_BASE}/reports/${format}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) throw new Error('Download failed');
+    return response.blob();
+}
+
 // ─────────────────────────────────────────
 // Utility
 // ─────────────────────────────────────────
@@ -279,4 +288,201 @@ export function getCurrentUser(): { id: string; name: string } | null {
     if (typeof window === 'undefined') return null;
     const user = localStorage.getItem('gst_user');
     return user ? JSON.parse(user) : null;
+}
+
+// ─────────────────────────────────────────
+// Products
+// ─────────────────────────────────────────
+
+export interface Product {
+    id: string;
+    name: string;
+    description?: string;
+    hsn_code?: string;
+    unit: string;
+    unit_price: number;
+    gst_rate: number;
+    stock_quantity: number;
+    low_stock_threshold: number;
+    sku?: string;
+    category?: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ProductListResponse {
+    products: Product[];
+    total: number;
+    page: number;
+    page_size: number;
+}
+
+export async function listProducts(params: {
+    search?: string;
+    category?: string;
+    page?: number;
+    page_size?: number;
+} = {}): Promise<ProductListResponse> {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, val]) => {
+        if (val !== undefined && val !== null && val !== '') query.set(key, String(val));
+    });
+    return apiRequest(`/products?${query.toString()}`);
+}
+
+export async function createProduct(data: {
+    name: string;
+    description?: string;
+    hsn_code?: string;
+    unit?: string;
+    unit_price?: number;
+    gst_rate?: number;
+    stock_quantity?: number;
+    low_stock_threshold?: number;
+    sku?: string;
+    category?: string;
+}): Promise<Product> {
+    return apiRequest('/products', { method: 'POST', body: data });
+}
+
+export async function updateProduct(id: string, data: Record<string, unknown>): Promise<Product> {
+    return apiRequest(`/products/${id}`, { method: 'PUT', body: data });
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+    return apiRequest(`/products/${id}`, { method: 'DELETE' });
+}
+
+export async function getLowStockProducts(): Promise<ProductListResponse> {
+    return apiRequest('/products/low-stock');
+}
+
+// ─────────────────────────────────────────
+// AI Services
+// ─────────────────────────────────────────
+
+export interface AIChatResponse {
+    response: string;
+    data?: Record<string, unknown>;
+}
+
+export interface AIPrediction {
+    metric: string;
+    current_value: number;
+    predicted_value: number;
+    confidence: number;
+    period: string;
+}
+
+export interface ComplianceAlert {
+    severity: string;
+    title: string;
+    description: string;
+    action?: string;
+}
+
+export async function aiChat(message: string, context?: string): Promise<AIChatResponse> {
+    return apiRequest('/ai/chat', { method: 'POST', body: { message, context } });
+}
+
+export async function aiPredictions(): Promise<AIPrediction[]> {
+    return apiRequest('/ai/predictions');
+}
+
+export async function aiCompliance(): Promise<ComplianceAlert[]> {
+    return apiRequest('/ai/compliance');
+}
+
+// ─────────────────────────────────────────
+// Business Profile
+// ─────────────────────────────────────────
+
+export interface BusinessProfile {
+    id: string;
+    name: string;
+    gstin?: string;
+    state_code: string;
+    state_name: string;
+    business_type: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    pan?: string;
+    financial_year: string;
+    invoice_prefix: string;
+    created_at: string;
+}
+
+export async function getBusinessProfile(): Promise<BusinessProfile> {
+    return apiRequest('/business');
+}
+
+export async function updateBusinessProfile(data: Record<string, unknown>): Promise<BusinessProfile> {
+    return apiRequest('/business', { method: 'PUT', body: data });
+}
+
+// ─────────────────────────────────────────
+// Documents
+// ─────────────────────────────────────────
+
+export interface DocumentItem {
+    id: string;
+    filename: string;
+    file_url: string;
+    document_type: string;
+    ocr_status: string;
+    ocr_confidence?: number;
+    linked_invoice_id?: string;
+    created_at: string;
+}
+
+export async function uploadDocument(file: File, documentType: string = 'invoice'): Promise<DocumentItem> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('gst_token');
+    const response = await fetch(`${API_BASE}/documents/upload?document_type=${documentType}`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+    });
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({ detail: 'Upload failed' }));
+        throw new ApiError(err.detail, response.status);
+    }
+    return response.json();
+}
+
+export async function listDocuments(): Promise<DocumentItem[]> {
+    return apiRequest('/documents');
+}
+
+// ─────────────────────────────────────────
+// GST Center
+// ─────────────────────────────────────────
+
+export async function validateGstin(gstin: string): Promise<{ valid: boolean; details?: Record<string, unknown> }> {
+    return apiRequest('/gst/validate-gstin', { method: 'POST', body: { gstin } });
+}
+
+// ─────────────────────────────────────────
+// Analytics
+// ─────────────────────────────────────────
+
+export async function getDashboardSummary(): Promise<Record<string, unknown>> {
+    return apiRequest('/analytics/summary');
+}
+
+export async function getDashboardCharts(months?: number): Promise<Record<string, unknown>> {
+    const q = months ? `?months=${months}` : '';
+    return apiRequest(`/analytics/charts${q}`);
+}
+
+export async function getTaxFilingStatus(): Promise<Record<string, unknown>> {
+    return apiRequest('/analytics/tax-filing-status');
+}
+
+export async function getRecentInvoices(limit?: number): Promise<Record<string, unknown>[]> {
+    const q = limit ? `?limit=${limit}` : '';
+    return apiRequest(`/analytics/recent-invoices${q}`);
 }

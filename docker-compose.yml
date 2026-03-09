@@ -1,0 +1,96 @@
+# ─────────────────────────────────────────
+# GSTFlow — Docker Compose
+# Full stack: Frontend + Backend + Redis
+# ─────────────────────────────────────────
+
+version: '3.9'
+
+services:
+  # ── Backend API ──────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gstflow-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - REDIS_URL=redis://redis:6379/0
+      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+      - APP_VERSION=2.0.0
+      - RATE_LIMIT_PER_MINUTE=120
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - gstflow-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Frontend (Next.js) ──────────────────
+  frontend:
+    build:
+      context: ./gst-app
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    container_name: gstflow-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - gstflow-net
+
+  # ── Redis (Queue + Cache) ───────────────
+  redis:
+    image: redis:7-alpine
+    container_name: gstflow-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - gstflow-net
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── Worker (Background Tasks) ───────────
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gstflow-worker
+    restart: unless-stopped
+    command: python -m app.worker
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - gstflow-net
+
+networks:
+  gstflow-net:
+    driver: bridge
+
+volumes:
+  redis-data:
