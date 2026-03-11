@@ -60,9 +60,11 @@ async function apiRequest<T>(endpoint: string, options: ApiOptions = {}): Promis
 
 export interface LoginResponse {
     access_token: string;
+    refresh_token: string;
     token_type: string;
     user_id: string;
     name: string;
+    role: string;
 }
 
 export async function register(phone: string, password: string, name: string): Promise<LoginResponse> {
@@ -71,7 +73,8 @@ export async function register(phone: string, password: string, name: string): P
         body: { phone, password, name },
     });
     localStorage.setItem('gst_token', data.access_token);
-    localStorage.setItem('gst_user', JSON.stringify({ id: data.user_id, name: data.name }));
+    localStorage.setItem('gst_refresh_token', data.refresh_token);
+    localStorage.setItem('gst_user', JSON.stringify({ id: data.user_id, name: data.name, role: data.role }));
     return data;
 }
 
@@ -81,7 +84,8 @@ export async function login(phone: string, password: string): Promise<LoginRespo
         body: { phone, password },
     });
     localStorage.setItem('gst_token', data.access_token);
-    localStorage.setItem('gst_user', JSON.stringify({ id: data.user_id, name: data.name }));
+    localStorage.setItem('gst_refresh_token', data.refresh_token);
+    localStorage.setItem('gst_user', JSON.stringify({ id: data.user_id, name: data.name, role: data.role }));
     return data;
 }
 

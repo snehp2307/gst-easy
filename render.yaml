@@ -27,7 +27,7 @@ services:
       - key: JWT_REFRESH_DAYS
         value: "30"
       - key: CORS_ORIGINS
-        value: '["https://gst-easy.vercel.app","http://localhost:3000"]'
+        value: '["https://gst-easy.vercel.app","https://gstflow-frontend.onrender.com","http://localhost:3000"]'
       - key: RATE_LIMIT_PER_MINUTE
         value: "120"
       - key: PYTHON_VERSION
