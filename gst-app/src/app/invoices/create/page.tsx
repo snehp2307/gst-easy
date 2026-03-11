@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { formatPaiseClient } from '@/lib/api-helpers';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -15,6 +16,8 @@ async function apiFetch(path: string, opts?: RequestInit) {
 interface LineItem { description: string; qty: number; price: number; gstRate: number; }
 
 export default function CreateInvoicePage() {
+    const router = useRouter();
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [customer, setCustomer] = useState('');
     const [gstin, setGstin] = useState('27AAACG1234F1Z5');
     const [address, setAddress] = useState('');
@@ -42,6 +45,40 @@ export default function CreateInvoicePage() {
     const igst = 0;
     const total = subtotal + cgst + sgst + igst;
 
+    const handleSave = async (status: string) => {
+        setIsSubmitting(true);
+        try {
+            const payload = {
+                buyer_name: customer || 'Walk-in Customer',
+                buyer_gstin: gstin,
+                buyer_state_code: '27',
+                invoice_date: invoiceDate || new Date().toISOString().split('T')[0],
+                due_date: dueDate || new Date().toISOString().split('T')[0],
+                status: status,
+                notes: notes,
+                terms: terms,
+                items: items.map(i => ({
+                    description: i.description || 'Item',
+                    quantity: i.qty,
+                    unit_price: Math.round(i.price * 100),
+                    gst_rate: i.gstRate,
+                    discount: 0
+                }))
+            };
+
+            await apiFetch('/invoices', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            router.push('/invoices');
+        } catch (error: any) {
+            alert(error.message || 'Failed to create invoice');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -51,11 +88,17 @@ export default function CreateInvoicePage() {
                     <p className="text-xs text-slate-500">Draft saved just now</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50">
+                    <button
+                        onClick={() => handleSave('draft')}
+                        disabled={isSubmitting}
+                        className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50">
                         Save as Draft
                     </button>
-                    <button className="px-4 py-2 text-sm font-medium text-white bg-[#10a24b] rounded-lg hover:bg-[#10a24b]/90 shadow-sm shadow-[#10a24b]/20">
-                        Save and Send Invoice
+                    <button
+                        onClick={() => handleSave('sent')}
+                        disabled={isSubmitting}
+                        className="px-4 py-2 text-sm font-medium text-white bg-[#10a24b] rounded-lg hover:bg-[#10a24b]/90 shadow-sm shadow-[#10a24b]/20 disabled:opacity-50">
+                        {isSubmitting ? 'Saving...' : 'Save and Send Invoice'}
                     </button>
                 </div>
             </div>
