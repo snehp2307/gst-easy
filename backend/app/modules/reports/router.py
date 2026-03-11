@@ -32,7 +32,7 @@ async def get_invoice_pdf(
     result = await db.execute(
         select(Invoice)
         .options(selectinload(Invoice.items))
-        .where(Invoice.id == UUID(invoice_id), Invoice.business_id == business.id)
+        .where(Invoice.id == invoice_id, Invoice.business_id == business.id)
     )
     invoice = result.scalar_one_or_none()
     if not invoice:

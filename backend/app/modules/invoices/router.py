@@ -217,7 +217,7 @@ async def create_invoice(
     buyer_state = req.buyer_state_code or business.state_code
     if req.customer_id:
         cust_result = await db.execute(
-            select(Customer).where(Customer.id == UUID(req.customer_id), Customer.business_id == business.id)
+            select(Customer).where(Customer.id == req.customer_id, Customer.business_id == business.id)
         )
         cust = cust_result.scalar_one_or_none()
         if cust:
@@ -231,7 +231,7 @@ async def create_invoice(
 
     invoice = Invoice(
         business_id=business.id,
-        customer_id=UUID(req.customer_id) if req.customer_id else None,
+        customer_id=req.customer_id if req.customer_id else None,
         invoice_type="sale",
         invoice_number=inv_number,
         invoice_date=req.invoice_date,

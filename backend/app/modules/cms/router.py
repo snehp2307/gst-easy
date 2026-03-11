@@ -109,7 +109,7 @@ async def get_support_article(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(SupportArticle).where(SupportArticle.id == UUID(article_id))
+        select(SupportArticle).where(SupportArticle.id == article_id)
     )
     article = result.scalar_one_or_none()
     if not article:
