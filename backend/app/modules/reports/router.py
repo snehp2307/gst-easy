@@ -3,6 +3,7 @@ Reports module — PDF, CSV, JSON export for invoices and GST reports.
 """
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -19,7 +20,7 @@ router = APIRouter()
 
 @router.get("/invoice-pdf/{invoice_id}")
 async def get_invoice_pdf(
-    invoice_id: str,
+    invoice_id: UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     business: Business = Depends(get_current_business),

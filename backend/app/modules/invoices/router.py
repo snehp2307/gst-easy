@@ -46,7 +46,7 @@ class InvoiceCreate(BaseModel):
 
 
 class InvoiceItemResponse(BaseModel):
-    id: str
+    id: UUID
     description: str
     hsn_code: Optional[str] = None
     quantity: float
@@ -63,7 +63,7 @@ class InvoiceItemResponse(BaseModel):
 
 
 class InvoiceResponse(BaseModel):
-    id: str
+    id: UUID
     invoice_type: str
     invoice_number: str
     invoice_date: date

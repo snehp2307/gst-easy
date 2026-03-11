@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 class PaymentCreate(BaseModel):
-    invoice_id: str
+    invoice_id: UUID
     amount: int  # paise
     payment_date: date
     payment_mode: str
@@ -28,8 +28,8 @@ class PaymentCreate(BaseModel):
 
 
 class PaymentResponse(BaseModel):
-    id: str
-    invoice_id: str
+    id: UUID
+    invoice_id: UUID
     amount: int
     payment_date: date
     payment_mode: str
@@ -74,7 +74,7 @@ async def record_payment(
 ):
     # Verify invoice belongs to this business
     inv_result = await db.execute(
-        select(Invoice).where(Invoice.id == UUID(req.invoice_id), Invoice.business_id == business.id)
+        select(Invoice).where(Invoice.id == req.invoice_id, Invoice.business_id == business.id)
     )
     invoice = inv_result.scalar_one_or_none()
     if not invoice:

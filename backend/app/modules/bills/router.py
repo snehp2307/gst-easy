@@ -41,7 +41,7 @@ class OcrResult(BaseModel):
 
 
 class BillResponse(BaseModel):
-    id: str
+    id: UUID
     invoice_number: str
     invoice_date: date
     supplier_name: Optional[str] = None

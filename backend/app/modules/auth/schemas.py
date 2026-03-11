@@ -1,3 +1,4 @@
+from uuid import UUID
 """Auth module Pydantic schemas."""
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -34,13 +35,13 @@ class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
-    user_id: str
+    user_id: UUID
     name: str
     role: str
 
 
 class UserProfile(BaseModel):
-    id: str
+    id: UUID
     name: str
     phone: str
     email: Optional[str]

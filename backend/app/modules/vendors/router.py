@@ -40,7 +40,7 @@ class VendorUpdate(BaseModel):
 
 
 class VendorResponse(BaseModel):
-    id: str
+    id: UUID
     name: str
     gstin: Optional[str] = None
     state_code: Optional[str] = None

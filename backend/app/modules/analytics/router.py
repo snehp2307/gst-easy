@@ -1,3 +1,4 @@
+from uuid import UUID
 """
 Analytics module — Dashboard summary, charts, and tax filing status.
 Powers the GSTFlow Dashboard UI screen.
@@ -52,7 +53,7 @@ class TaxFilingStatus(BaseModel):
 
 
 class RecentInvoice(BaseModel):
-    id: str
+    id: UUID
     invoice_number: str
     customer_name: Optional[str]
     invoice_date: date

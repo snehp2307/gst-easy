@@ -19,7 +19,7 @@ router = APIRouter()
 # ─── Schemas ──────────────────────────────
 
 class BlogPostResponse(BaseModel):
-    id: str
+    id: UUID
     title: str
     slug: str
     content: str
@@ -30,7 +30,7 @@ class BlogPostResponse(BaseModel):
 
 
 class SupportArticleResponse(BaseModel):
-    id: str
+    id: UUID
     title: str
     content: str
     category: str
@@ -40,7 +40,7 @@ class SupportArticleResponse(BaseModel):
 
 
 class CompanyPageResponse(BaseModel):
-    id: str
+    id: UUID
     title: str
     slug: str
     content: str
@@ -105,7 +105,7 @@ async def list_support_articles(
 
 @router.get("/help/{article_id}", response_model=SupportArticleResponse, tags=["CMS"])
 async def get_support_article(
-    article_id: str,
+    article_id: UUID,
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(

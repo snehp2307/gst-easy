@@ -52,8 +52,31 @@ async function apiRequest<T>(endpoint: string, options: ApiOptions = {}): Promis
     const response = await fetch(`${API_BASE}${endpoint}`, config);
 
     if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-        throw new ApiError(errorData.detail || response.statusText, response.status);
+        let errorMsg = 'Unknown error';
+        try {
+            const errorData = await response.json();
+            errorMsg = errorData.detail || errorData.message || errorMsg;
+        } catch (e) {
+            // Not JSON or empty body
+        }
+
+        // Map generic HTTP statuses to better messages if backend didn't provide a detail string
+        if (errorMsg === 'Unknown error' || errorMsg === 'Not Found' || errorMsg === 'Internal Server Error') {
+            if (response.status === 401 || response.status === 403) {
+                errorMsg = 'Invalid login credentials or unauthorized access.';
+            } else if (response.status === 404) {
+                // If it's a 404 and the text wasn't helpful, it's a missing resource/route
+                errorMsg = 'Requested resource not found. Please try again.';
+            } else if (response.status >= 500) {
+                errorMsg = 'Server error. Please try again later.';
+            } else if (response.status === 422) {
+                errorMsg = 'Missing data. Please check your inputs.';
+            } else {
+                errorMsg = response.statusText || 'An error occurred. Please try again.';
+            }
+        }
+
+        throw new ApiError(errorMsg, response.status);
     }
 
     // Handle empty responses

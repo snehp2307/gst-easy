@@ -26,8 +26,10 @@ class CustomerUpdate(BaseModel):
     pincode: Optional[str] = None
 
 
+from uuid import UUID
+
 class CustomerResponse(BaseModel):
-    id: str
+    id: UUID
     name: str
     gstin: Optional[str] = None
     state_code: Optional[str] = None

@@ -1,3 +1,4 @@
+from uuid import UUID
 """
 Business module — Business profile CRUD.
 """
@@ -16,7 +17,7 @@ router = APIRouter()
 
 
 class BusinessResponse(BaseModel):
-    id: str
+    id: UUID
     name: str
     gstin: Optional[str] = None
     state_code: str

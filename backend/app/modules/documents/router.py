@@ -18,7 +18,7 @@ router = APIRouter()
 
 
 class DocumentResponse(BaseModel):
-    id: str
+    id: UUID
     filename: str
     file_url: str
     document_type: str
