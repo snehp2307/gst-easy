@@ -6,9 +6,8 @@ All endpoints versioned under /api/v1/.
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import engine, Base
@@ -96,17 +95,3 @@ app.include_router(cms_router, prefix=f"{API_V1}", tags=["CMS"])
 @app.get("/api/health", tags=["System"])
 async def health_check():
     return {"status": "ok", "version": settings.APP_VERSION, "service": "GSTFlow API"}
-
-
-# ─── Temporary Admin Endpoint (REMOVE AFTER USE) ─
-from app.database import get_db
-from sqlalchemy import text
-
-@app.delete("/api/admin/clear-users", tags=["System"])
-async def clear_users(db: AsyncSession = Depends(get_db)):
-    """Temporary endpoint to clear users table. REMOVE AFTER USE."""
-    result = await db.execute(text("SELECT COUNT(*) FROM users"))
-    count = result.scalar()
-    await db.execute(text("TRUNCATE TABLE users CASCADE"))
-    await db.commit()
-    return {"message": f"Cleared {count} users and all related data"}
