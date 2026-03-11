@@ -95,3 +95,52 @@ app.include_router(cms_router, prefix=f"{API_V1}", tags=["CMS"])
 @app.get("/api/health", tags=["System"])
 async def health_check():
     return {"status": "ok", "version": settings.APP_VERSION, "service": "GSTFlow API"}
+
+# ─── Temp Admin Seed Endpoint (REMOVE LATER) ────────
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
+
+@app.post("/api/admin/seed", tags=["System"])
+async def seed_production_db(db: AsyncSession = Depends(get_db)):
+    """Temp endpoint to run database seed on production."""
+    from app.models import User, Business, Customer, Vendor, Product, Inventory
+    from app.core.security import hash_password
+    from sqlalchemy import select
+    
+    # 1. User
+    res = await db.execute(select(User).where(User.email == "demo@gstflow.com"))
+    demo_user = res.scalars().first()
+    if not demo_user:
+        demo_user = User(email="demo@gstflow.com", phone="9999999999", name="Demo User", password_hash=hash_password("password123"), role="admin")
+        db.add(demo_user)
+        await db.commit()
+    
+    # 2. Business
+    res = await db.execute(select(Business).where(Business.gstin == "24ABCDE1234F1Z5"))
+    demo_biz = res.scalars().first()
+    if not demo_biz:
+        demo_biz = Business(user_id=demo_user.id, name="Demo Traders", gstin="24ABCDE1234F1Z5", state_code="24", state_name="Gujarat", business_type="regular", financial_year="2023-24")
+        db.add(demo_biz)
+        await db.commit()
+
+    # 3. Customer & Vendor
+    res = await db.execute(select(Customer).where(Customer.phone == "8888888881"))
+    cust = res.scalars().first()
+    if not cust:
+        db.add_all([Customer(business_id=demo_biz.id, name="Raj Traders", phone="8888888881", state_code="24"), Customer(business_id=demo_biz.id, name="ABC Enterprises", phone="8888888882", state_code="27")])
+        db.add_all([Vendor(business_id=demo_biz.id, name="Patel Suppliers", phone="7777777771", state_code="24"), Vendor(business_id=demo_biz.id, name="Sharma Distributors", phone="7777777772", state_code="07")])
+        await db.commit()
+
+    # 4. Products
+    res = await db.execute(select(Product).where(Product.name == "Steel Pipe"))
+    prod = res.scalars().first()
+    if not prod:
+        p1 = Product(business_id=demo_biz.id, name="Steel Pipe", unit="KGS", unit_price=150000, gst_rate=18.0)
+        p2 = Product(business_id=demo_biz.id, name="Cotton Fabric", unit="MTR", unit_price=20000, gst_rate=5.0)
+        p3 = Product(business_id=demo_biz.id, name="Packaging Box", unit="NOS", unit_price=1000, gst_rate=12.0)
+        db.add_all([p1, p2, p3])
+        await db.commit()
+        db.add_all([Inventory(product_id=p1.id, stock_quantity=500.0), Inventory(product_id=p2.id, stock_quantity=1000.0), Inventory(product_id=p3.id, stock_quantity=2000.0)])
+        await db.commit()
+
+    return {"message": "Database successfully seeded."}
