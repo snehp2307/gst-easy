@@ -3,11 +3,18 @@
  * All frontend pages use this to communicate with the Python backend.
  */
 
-let API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://gst-easy-api.onrender.com/api/v1';
+const RAW_URL = process.env.NEXT_PUBLIC_API_URL || 'https://gst-easy-api.onrender.com/api/v1';
 
-// Auto-correct if the user forgot /api/v1 in their environment variable
-if (API_BASE && !API_BASE.endsWith('/api/v1')) {
-    API_BASE = API_BASE.replace(/\/$/, '') + '/api/v1';
+// Normalize: strip trailing slash, then ensure it ends with exactly /api/v1
+let API_BASE = RAW_URL.replace(/\/+$/, '');
+if (API_BASE.endsWith('/api/v1')) {
+    // Already correct — do nothing
+} else if (API_BASE.endsWith('/api')) {
+    // e.g. "https://host.com/api" → append /v1
+    API_BASE += '/v1';
+} else {
+    // e.g. "https://host.com" → append /api/v1
+    API_BASE += '/api/v1';
 }
 
 interface ApiOptions {
