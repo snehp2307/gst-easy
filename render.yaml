@@ -47,7 +47,7 @@ services:
     autoDeploy: true
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: https://gstflow-backend.onrender.com/api/v1
+        value: https://gst-easy-api.onrender.com/api/v1
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
